@@ -52,6 +52,60 @@ public sealed class AccountTests
         }
     }
 
+    /// <summary>Answers like the real HTTP client: on a thread-pool thread, not the caller's.</summary>
+    private sealed class ThreadPoolApi(IDesktopApi inner) : IDesktopApi
+    {
+        public Task<DeviceSignIn> StartSignInAsync(string deviceName, CancellationToken cancellationToken = default)
+            => Task.Run(() => inner.StartSignInAsync(deviceName, cancellationToken), cancellationToken);
+        public Task<SignInPoll> PollSignInAsync(string deviceSecret, CancellationToken cancellationToken = default)
+            => Task.Run(() => inner.PollSignInAsync(deviceSecret, cancellationToken), cancellationToken);
+        public Task<TokenPair> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default)
+            => Task.Run(() => inner.RefreshAsync(refreshToken, cancellationToken), cancellationToken);
+        public Task RevokeAsync(string refreshToken, CancellationToken cancellationToken = default)
+            => Task.Run(() => inner.RevokeAsync(refreshToken, cancellationToken), cancellationToken);
+        public Task<IReadOnlyList<AccountStation>> GetStationsAsync(string accessToken, CancellationToken cancellationToken = default)
+            => Task.Run(() => inner.GetStationsAsync(accessToken, cancellationToken), cancellationToken);
+        public Task<IssuedStationTarget> GetBroadcastTargetAsync(string accessToken, Guid tenantId, Guid stationId,
+            CancellationToken cancellationToken = default)
+            => Task.Run(() => inner.GetBroadcastTargetAsync(accessToken, tenantId, stationId, cancellationToken), cancellationToken);
+    }
+
+    [AvaloniaFact]
+    public async Task Sign_in_shows_the_code_on_the_UI_thread_when_the_API_answers_from_another_thread()
+    {
+        var secrets = new MemorySecrets();
+        var browser = new Browser();
+        using var host = AppHost.Create([], services =>
+        {
+            services.AddSingleton<IProfileStore, MemoryProfiles>();
+            services.AddSingleton<ISecretStore>(secrets);
+            services.AddSingleton<IAudioCaptureProvider, ToneAudioCaptureProvider>();
+            services.AddSingleton<IExternalBrowser>(browser);
+            services.AddSingleton(new AccountService(new ThreadPoolApi(new FakeDesktopApi()), new MemoryAccountStore(), secrets,
+                new FastTime()));
+        });
+        var window = host.Services.GetRequiredService<MainWindow>();
+        window.Show();
+        var model = host.Services.GetRequiredService<MainViewModel>();
+        await UntilAsync(() => !model.Account.IsBusy);
+        List<string> offThread = [];
+        model.Account.PropertyChanged += (_, e) =>
+        {
+            if (!Dispatcher.UIThread.CheckAccess())
+            {
+                offThread.Add(e.PropertyName ?? "");
+            }
+        };
+
+        await model.Account.SignInCommand.ExecuteAsync(null);
+
+        Assert.Empty(offThread);
+        Assert.Equal("Signed in.", model.Account.Status);
+        await UntilAsync(() => model.Account.IsSignedIn);
+        Assert.Equal([new Uri("https://app.test/device?code=BCDF-GHJK")], browser.Opened);
+        window.Close();
+    }
+
     [AvaloniaFact]
     public async Task Sign_in_pick_a_station_and_go_live_without_typing_any_connection_setting()
     {
