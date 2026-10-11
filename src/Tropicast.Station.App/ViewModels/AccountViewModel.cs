@@ -58,15 +58,16 @@ public sealed partial class AccountViewModel : ViewModelBase, IDisposable
         Status = "Starting sign-in…";
         try
         {
-            await _account.SignInAsync(DeviceName(), request =>
+            // The account service calls back from a background thread once the API answers; bound properties
+            // may only change on the UI thread.
+            await _account.SignInAsync(DeviceName(), request => Dispatcher.UIThread.InvokeAsync(() =>
             {
                 UserCode = request.UserCode;
                 _signInPage = request.VerificationUriComplete;
                 Status = $"Approve the code {request.UserCode} in your browser at {request.VerificationUri}.";
                 OpenSignInPage();
-                return Task.CompletedTask;
-            }, cancellationToken);
-            Status = Stations.Count == 0 ? "Signed in. This account has no station yet: create one on the web." : "Signed in.";
+            }).GetTask(), cancellationToken);
+            Status = _account.Stations.Count == 0 ? "Signed in. This account has no station yet: create one on the web." : "Signed in.";
         }
         catch (OperationCanceledException)
         {
