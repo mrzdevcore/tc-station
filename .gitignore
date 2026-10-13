@@ -9,3 +9,4 @@ TestResults/
 .idea/
 *.DotSettings.user
 .DS_Store
+**/graphify-out/
