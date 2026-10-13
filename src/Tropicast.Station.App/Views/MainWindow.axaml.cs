@@ -24,6 +24,8 @@ public partial class MainWindow : Window
 
     private bool _quitRequested;
     private bool _hiding;
+    private bool _started;
+    private long? _deactivatedAt;
     private WindowState _restoreState = WindowState.Normal;
 
     private bool HidesToTray => Tray is not null && DataContext is MainViewModel { Settings.KeepInTray: true };
@@ -177,7 +179,14 @@ public partial class MainWindow : Window
     protected override void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
+        // Opened fires again each time the window comes back from the tray: start up once.
+        if (_started)
+        {
+            return;
+        }
+        _started = true;
         DiagnosticsPage.Diagnostics = Diagnostics;
+        Deactivated += (_, _) => NoteDeactivated();
         if (DataContext is MainViewModel model)
         {
             model.PropertyChanged += OnModelChanged;
@@ -271,10 +280,16 @@ public partial class MainWindow : Window
         Activate();
     }
 
+    /// <summary>The window lost focus, for example to a click on the tray icon.</summary>
+    internal void NoteDeactivated() => _deactivatedAt = Environment.TickCount64;
+
     /// <summary>Tray left click: brings the window to the front, or hides it when it already is.</summary>
     internal void ToggleFromTray()
     {
-        if (IsVisible && IsActive && WindowState != WindowState.Minimized)
+        // Clicking a Windows tray icon takes focus from the window just before the click arrives:
+        // a window that was active a moment ago counts as in front.
+        var inFront = IsActive || (_deactivatedAt is { } at && Environment.TickCount64 - at < 500);
+        if (IsVisible && inFront && WindowState != WindowState.Minimized)
         {
             _ = HideToTrayAsync();
         }

@@ -126,6 +126,27 @@ public sealed class BroadcastTests
     }
 
     [AvaloniaFact]
+    public async Task Confirmation_brings_a_hidden_window_back_as_it_was()
+    {
+        var window = new Window();
+        window.Show();
+        window.WindowState = WindowState.Maximized;
+        window.Hide();
+        var confirmation = new BroadcastConfirmation { Owner = window };
+
+        var pending = confirmation.ConfirmStopAsync(false);
+
+        Assert.True(window.IsVisible);
+        Assert.Equal(WindowState.Maximized, window.WindowState);
+        var dialog = Assert.Single(window.OwnedWindows);
+        dialog.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+        window.KeyRelease(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+        Assert.False(await pending);
+        Assert.Equal(WindowState.Maximized, window.WindowState);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Closing_live_window_can_be_cancelled_then_confirmed_and_stops_encoder()
     {
         var profile = TestProfiles.Valid();
@@ -183,8 +204,12 @@ public sealed class BroadcastTests
         Assert.Equal(BroadcastState.Live, model.Broadcast.State);
         Assert.True(tray.Item("Stop broadcast").IsEnabled);
 
-        tray.Item("Quit Tropicast Station").Command!.Execute(null);
+        tray.Item("Stop broadcast").Command!.Execute(null);
         await UntilAsync(() => confirmation.Requests == 1);
+        Assert.Equal(BroadcastState.Live, model.Broadcast.State);
+
+        tray.Item("Quit Tropicast Station").Command!.Execute(null);
+        await UntilAsync(() => confirmation.Requests == 2);
         Assert.True(window.IsVisible);
         Assert.True(model.Broadcast.HasActiveBroadcast);
 

@@ -11,20 +11,25 @@ public interface ITraySupport
 /// <summary>
 /// Windows and macOS always have a notification area or menu bar. On Linux a tray icon needs a StatusNotifier host
 /// (KDE, Xfce, Cinnamon, GNOME with an AppIndicator extension…); without one, hiding the window would leave no way back.
+/// Checked once per launch.
 /// </summary>
 internal sealed class TraySupport : ITraySupport
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(2);
+    private readonly Lazy<Task<bool>> _available = new(DetectAsync);
 
-    public async Task<bool> IsAvailableAsync()
+    public Task<bool> IsAvailableAsync() => _available.Value;
+
+    private static async Task<bool> DetectAsync()
     {
         if (!OperatingSystem.IsLinux())
         {
             return true;
         }
+        Process? process = null;
         try
         {
-            using var process = Process.Start(new ProcessStartInfo("dbus-send",
+            process = Process.Start(new ProcessStartInfo("dbus-send",
             [
                 "--session", "--print-reply", "--dest=org.freedesktop.DBus", "/org/freedesktop/DBus",
                 "org.freedesktop.DBus.NameHasOwner", "string:org.kde.StatusNotifierWatcher",
@@ -41,10 +46,27 @@ internal sealed class TraySupport : ITraySupport
             await process.WaitForExitAsync(timeout.Token).ConfigureAwait(false);
             return process.ExitCode == 0 && output.Contains("boolean true", StringComparison.Ordinal);
         }
-        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or OperationCanceledException)
+        catch (OperationCanceledException)
         {
-            // No dbus-send, no session bus, or no answer: assume no tray, so closing keeps quitting as before.
+            // A hung session bus: do not leave dbus-send behind.
+            try
+            {
+                process?.Kill(entireProcessTree: true);
+            }
+            catch (InvalidOperationException)
+            {
+                // It exited meanwhile.
+            }
             return false;
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            // No dbus-send or no session bus: assume no tray, so closing keeps quitting as before.
+            return false;
+        }
+        finally
+        {
+            process?.Dispose();
         }
     }
 }

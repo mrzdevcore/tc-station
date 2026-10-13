@@ -9,6 +9,9 @@ public sealed partial class GeneralSettingsViewModel(IAppSettingsStore store, IT
 {
     private AppSettings _settings = AppSettings.Default;
     private bool _loaded;
+    private bool _applying;
+    private bool? _choiceBeforeLoad;
+    private Task _saving = Task.CompletedTask;
 
     /// <summary>Hide to the tray on close and minimize. Off until loaded, so nothing hides before the choice is known.</summary>
     [ObservableProperty] public partial bool KeepInTray { get; set; }
@@ -22,32 +25,66 @@ public sealed partial class GeneralSettingsViewModel(IAppSettingsStore store, IT
 
     public bool TrayNoticeShown => _settings.TrayNoticeShown;
 
+    /// <summary>Applies the saved choice at once; the tray check (up to 2 s on Linux) only decides an unsaved default and the hint.</summary>
     [RelayCommand]
     private async Task LoadAsync()
     {
         _settings = await store.LoadAsync();
+        if (_settings.KeepInTray is { } saved && _choiceBeforeLoad is null)
+        {
+            Apply(saved);
+        }
         TrayDetected = await tray.IsAvailableAsync();
-        _loaded = false;
-        KeepInTray = _settings.KeepInTray ?? TrayDetected;
+        if (_choiceBeforeLoad is { } choice)
+        {
+            // Toggled while loading: the user's choice wins and is saved.
+            _loaded = true;
+            await Save(_settings with { KeepInTray = choice });
+            return;
+        }
+        Apply(_settings.KeepInTray ?? TrayDetected);
+    }
+
+    private void Apply(bool value)
+    {
+        _applying = true;
+        KeepInTray = value;
+        _applying = false;
         _loaded = true;
     }
 
     partial void OnKeepInTrayChanged(bool value)
     {
+        if (_applying)
+        {
+            return;
+        }
         if (_loaded)
         {
-            _ = SaveAsync(_settings with { KeepInTray = value });
+            _ = Save(_settings with { KeepInTray = value });
+        }
+        else
+        {
+            _choiceBeforeLoad = value;
         }
     }
 
-    public Task MarkTrayNoticeShownAsync() => SaveAsync(_settings with { TrayNoticeShown = true });
+    public Task MarkTrayNoticeShownAsync() => Save(_settings with { TrayNoticeShown = true });
 
-    private async Task SaveAsync(AppSettings settings)
+    /// <summary>Saves one at a time, each write taking the latest settings, so an older value never lands last.</summary>
+    private Task Save(AppSettings settings)
     {
         _settings = settings;
+        _saving = WriteAfterAsync(_saving);
+        return _saving;
+    }
+
+    private async Task WriteAfterAsync(Task previous)
+    {
+        await previous;
         try
         {
-            await store.SaveAsync(settings);
+            await store.SaveAsync(_settings);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
