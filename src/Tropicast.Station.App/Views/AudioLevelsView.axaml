@@ -5,62 +5,66 @@
              x:Class="Tropicast.Station.App.Views.AudioLevelsView"
              x:DataType="vm:AudioLevelsViewModel">
   <StackPanel Spacing="8">
-    <TextBlock Classes="cardTitle" Text="Audio levels: peak / RMS" />
-    <c:SettingsCard>
-      <StackPanel Margin="20,16" Spacing="10">
-        <ItemsControl x:Name="ChannelMeters" ItemsSource="{Binding ChannelLevels}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:ChannelLevelViewModel">
-              <StackPanel Spacing="4" Margin="0,0,0,10">
-                <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock Classes="code" Text="{Binding Label}" FontSize="12" TextWrapping="Wrap"
-                             AutomationProperties.Name="{Binding Label}" />
-                  <Border Grid.Column="1" Classes="state error" IsVisible="{Binding IsClipping}" Margin="8,0,0,0">
-                    <TextBlock Text="CLIPPING" />
-                  </Border>
-                </Grid>
-                <ProgressBar Minimum="-90" Maximum="0" Value="{Binding Peak}" Height="8" MinWidth="0" CornerRadius="4"
-                             Foreground="{DynamicResource MeterPeakBrush}" AutomationProperties.Name="{Binding PeakName}" />
-                <ProgressBar Minimum="-90" Maximum="0" Value="{Binding Rms}" Height="8" MinWidth="0" CornerRadius="4"
-                             Foreground="{DynamicResource MeterRmsBrush}" AutomationProperties.Name="{Binding RmsName}" />
-              </StackPanel>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-        <StackPanel Orientation="Horizontal" Spacing="10">
-          <Border Classes="state busy" IsVisible="{Binding IsSilent}" VerticalAlignment="Center">
-            <TextBlock Text="SILENCE" />
-          </Border>
-          <TextBlock x:Name="LevelStatus" Text="{Binding Status}" TextWrapping="Wrap" VerticalAlignment="Center"
-                     AutomationProperties.Name="{Binding Status}" />
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" Spacing="16">
-          <StackPanel Orientation="Horizontal" Spacing="6">
-            <Border Width="10" Height="10" CornerRadius="5" Background="{DynamicResource MeterPeakBrush}" VerticalAlignment="Center" />
-            <TextBlock Classes="muted" Text="Peak" />
+    <StackPanel Classes="group keep" Spacing="8">
+      <TextBlock Classes="cardTitle" Text="Audio levels: peak / RMS" />
+      <c:SettingsCard>
+        <StackPanel Margin="20,16" Spacing="10">
+          <ItemsControl x:Name="ChannelMeters" ItemsSource="{Binding ChannelLevels}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ChannelLevelViewModel">
+                <StackPanel Spacing="4" Margin="0,0,0,10">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Classes="code" Text="{Binding Label}" FontSize="12" TextWrapping="Wrap"
+                               AutomationProperties.Name="{Binding Label}" />
+                    <Border Grid.Column="1" Classes="state error" IsVisible="{Binding IsClipping}" Margin="8,0,0,0">
+                      <TextBlock Text="CLIPPING" />
+                    </Border>
+                  </Grid>
+                  <ProgressBar Minimum="-90" Maximum="0" Value="{Binding Peak}" Height="8" MinWidth="0" CornerRadius="4"
+                               Foreground="{DynamicResource MeterPeakBrush}" AutomationProperties.Name="{Binding PeakName}" />
+                  <ProgressBar Minimum="-90" Maximum="0" Value="{Binding Rms}" Height="8" MinWidth="0" CornerRadius="4"
+                               Foreground="{DynamicResource MeterRmsBrush}" AutomationProperties.Name="{Binding RmsName}" />
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Border Classes="state busy" IsVisible="{Binding IsSilent}" VerticalAlignment="Center">
+              <TextBlock Text="SILENCE" />
+            </Border>
+            <TextBlock x:Name="LevelStatus" Text="{Binding Status}" TextWrapping="Wrap" VerticalAlignment="Center"
+                       AutomationProperties.Name="{Binding Status}" />
           </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="6">
-            <Border Width="10" Height="10" CornerRadius="5" Background="{DynamicResource MeterRmsBrush}" VerticalAlignment="Center" />
-            <TextBlock Classes="muted" Text="RMS" />
+          <StackPanel Orientation="Horizontal" Spacing="16">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Border Width="10" Height="10" CornerRadius="5" Background="{DynamicResource MeterPeakBrush}" VerticalAlignment="Center" />
+              <TextBlock Classes="muted" Text="Peak" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Border Width="10" Height="10" CornerRadius="5" Background="{DynamicResource MeterRmsBrush}" VerticalAlignment="Center" />
+              <TextBlock Classes="muted" Text="RMS" />
+            </StackPanel>
           </StackPanel>
         </StackPanel>
-      </StackPanel>
-    </c:SettingsCard>
+      </c:SettingsCard>
+    </StackPanel>
 
-    <TextBlock Classes="cardTitle" Text="Silence warning" />
-    <c:SettingsCard x:Name="SilenceSettings">
-      <c:SettingRow Title="Threshold (dBFS)" Description="Below this level, the audio counts as silence.">
-        <NumericUpDown Value="{Binding SilenceThreshold}" Minimum="-90" Maximum="-10" Increment="1" FormatString="0" Width="130"
-                       AutomationProperties.Name="Silence threshold in dBFS" />
-      </c:SettingRow>
-      <c:SettingRow Title="Duration (seconds)" Description="How long the silence lasts before the warning.">
-        <NumericUpDown Value="{Binding SilenceSeconds}" Minimum="1" Maximum="60" Increment="1" FormatString="0" Width="130"
-                       AutomationProperties.Name="Silence duration in seconds" />
-      </c:SettingRow>
-      <c:SettingRow Title="In-app notification" Description="Show a notification when silence starts.">
-        <ToggleSwitch IsChecked="{Binding NotifyOnSilence}" OnContent="" OffContent=""
-                      AutomationProperties.Name="Show an in-app notification when silence starts" />
-      </c:SettingRow>
-    </c:SettingsCard>
+    <StackPanel Classes="group" Spacing="8">
+      <TextBlock Classes="cardTitle" Text="Silence warning" />
+      <c:SettingsCard x:Name="SilenceSettings">
+        <c:SettingRow Title="Threshold (dBFS)" Description="Below this level, the audio counts as silence.">
+          <NumericUpDown Value="{Binding SilenceThreshold}" Minimum="-90" Maximum="-10" Increment="1" FormatString="0" Width="130"
+                         AutomationProperties.Name="Silence threshold in dBFS" />
+        </c:SettingRow>
+        <c:SettingRow Title="Duration (seconds)" Description="How long the silence lasts before the warning.">
+          <NumericUpDown Value="{Binding SilenceSeconds}" Minimum="1" Maximum="60" Increment="1" FormatString="0" Width="130"
+                         AutomationProperties.Name="Silence duration in seconds" />
+        </c:SettingRow>
+        <c:SettingRow Title="In-app notification" Description="Show a notification when silence starts.">
+          <ToggleSwitch IsChecked="{Binding NotifyOnSilence}" OnContent="" OffContent=""
+                        AutomationProperties.Name="Show an in-app notification when silence starts" />
+        </c:SettingRow>
+      </c:SettingsCard>
+    </StackPanel>
   </StackPanel>
 </UserControl>

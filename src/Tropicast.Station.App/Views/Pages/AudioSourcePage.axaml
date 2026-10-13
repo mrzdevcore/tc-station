@@ -8,7 +8,7 @@
   <ScrollViewer>
     <StackPanel Classes="page">
       <TextBlock Classes="pageTitle" Text="Audio source" />
-      <views:AudioDevicesView x:Name="AudioDevices" DataContext="{Binding Audio}" />
+      <views:AudioDevicesView x:Name="AudioDevices" />
     </StackPanel>
   </ScrollViewer>
 </UserControl>

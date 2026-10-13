@@ -38,16 +38,28 @@ public sealed class LineIcon : Control
         set => SetValue(ForegroundProperty, value);
     }
 
+    private Pen? _pen;
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == ForegroundProperty)
+        {
+            _pen = null;
+        }
+    }
+
     public override void Render(DrawingContext context)
     {
         if (Data is null || Foreground is null)
         {
             return;
         }
+        _pen ??= new Pen(Foreground, 2, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
         var scale = Math.Min(Bounds.Width, Bounds.Height) / 24;
         using (context.PushTransform(Matrix.CreateScale(scale, scale)))
         {
-            context.DrawGeometry(null, new Pen(Foreground, 2, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round), Data);
+            context.DrawGeometry(null, _pen, Data);
         }
     }
 }

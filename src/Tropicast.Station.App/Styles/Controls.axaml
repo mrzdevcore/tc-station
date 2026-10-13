@@ -69,7 +69,8 @@
       </ControlTemplate>
     </Setter>
   </Style>
-  <Style Selector="c|SettingsCard.filtered, TextBlock.cardTitle.filtered">
+  <!-- Settings search: groups (heading, notes, card) and page intros without a match. -->
+  <Style Selector="StackPanel.group.filtered, TextBlock.pageIntro.filtered">
     <Setter Property="IsVisible" Value="False" />
   </Style>
   <Style Selector="c|SettingRow:first /template/ Border#PART_Divider">

@@ -123,20 +123,23 @@
       </Border>
 
       <Panel>
-        <pages:BroadcastPage x:Name="BroadcastPage"
-                             IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Broadcast}" />
-        <pages:AudioSourcePage x:Name="AudioSourcePage"
-                               IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=AudioSource}" />
-        <pages:LevelsPage x:Name="LevelsPage"
-                          IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Levels}" />
-        <pages:AccountPage x:Name="AccountPage"
-                           IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Account}" />
-        <pages:ProfilesPage x:Name="ProfilesPage"
-                            IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Profiles}" />
-        <pages:DiagnosticsPage x:Name="DiagnosticsPage"
-                               IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Diagnostics}" />
-        <pages:AboutPage x:Name="AboutPage"
-                         IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=About}" />
+        <!-- No page shows under "No settings found". -->
+        <Panel x:Name="PageHost" IsVisible="{Binding !HasNoSearchResults}">
+          <pages:BroadcastPage x:Name="BroadcastPage"
+                               IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Broadcast}" />
+          <pages:AudioSourcePage x:Name="AudioSourcePage"
+                                 IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=AudioSource}" />
+          <pages:LevelsPage x:Name="LevelsPage"
+                            IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Levels}" />
+          <pages:AccountPage x:Name="AccountPage"
+                             IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Account}" />
+          <pages:ProfilesPage x:Name="ProfilesPage"
+                              IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Profiles}" />
+          <pages:DiagnosticsPage x:Name="DiagnosticsPage"
+                                 IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Diagnostics}" />
+          <pages:AboutPage x:Name="AboutPage"
+                           IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=About}" />
+        </Panel>
         <StackPanel x:Name="NoResults" IsVisible="{Binding HasNoSearchResults}" HorizontalAlignment="Center"
                     VerticalAlignment="Center" Spacing="6">
           <c:LineIcon Data="{StaticResource Icon.Search}" Width="28" Height="28" HorizontalAlignment="Center"

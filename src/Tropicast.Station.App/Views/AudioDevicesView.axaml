@@ -8,47 +8,51 @@
   <StackPanel Spacing="8">
     <TextBlock Classes="pageIntro" Text="{Binding ProviderDescription}" />
 
-    <TextBlock Classes="cardTitle" Text="Devices" />
-    <c:SettingsCard>
-      <c:SettingRow Title="Microphone / input" Description="A microphone, a mixer or another input device.">
-        <ComboBox x:Name="InputPicker" Classes="field" ItemsSource="{Binding Inputs}" SelectedItem="{Binding SelectedInput}"
-                  IsEnabled="{Binding CanChoose}" AutomationProperties.Name="Microphones and inputs">
-          <ComboBox.ItemTemplate>
-            <DataTemplate x:DataType="audio:AudioDevice"><TextBlock Text="{Binding Label}" /></DataTemplate>
-          </ComboBox.ItemTemplate>
-        </ComboBox>
-      </c:SettingRow>
-      <c:SettingRow Title="Application / system output" Description="What this computer plays, for example a playout app.">
-        <ComboBox x:Name="OutputPicker" Classes="field" ItemsSource="{Binding Outputs}" SelectedItem="{Binding SelectedOutput}"
-                  IsEnabled="{Binding CanChoose}" AutomationProperties.Name="Application and system output">
-          <ComboBox.ItemTemplate>
-            <DataTemplate x:DataType="audio:AudioDevice"><TextBlock Text="{Binding Label}" /></DataTemplate>
-          </ComboBox.ItemTemplate>
-        </ComboBox>
-      </c:SettingRow>
-      <c:SettingRow Title="Refresh devices" Description="Look again after plugging in or removing a device.">
-        <Button Command="{Binding RefreshCommand}" AutomationProperties.Name="Refresh devices">
-          <StackPanel Orientation="Horizontal" Spacing="6"><c:LineIcon Data="{StaticResource Icon.Refresh}" /><TextBlock Text="Refresh" /></StackPanel>
-        </Button>
-      </c:SettingRow>
-    </c:SettingsCard>
+    <StackPanel Classes="group" Spacing="8">
+      <TextBlock Classes="cardTitle" Text="Devices" />
+      <c:SettingsCard>
+        <c:SettingRow Title="Microphone / input" Description="A microphone, a mixer or another input device.">
+          <ComboBox x:Name="InputPicker" Classes="field" ItemsSource="{Binding Inputs}" SelectedItem="{Binding SelectedInput}"
+                    IsEnabled="{Binding CanChoose}" AutomationProperties.Name="Microphones and inputs">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="audio:AudioDevice"><TextBlock Text="{Binding Label}" /></DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </c:SettingRow>
+        <c:SettingRow Title="Application / system output" Description="What this computer plays, for example a playout app.">
+          <ComboBox x:Name="OutputPicker" Classes="field" ItemsSource="{Binding Outputs}" SelectedItem="{Binding SelectedOutput}"
+                    IsEnabled="{Binding CanChoose}" AutomationProperties.Name="Application and system output">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="audio:AudioDevice"><TextBlock Text="{Binding Label}" /></DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </c:SettingRow>
+        <c:SettingRow Title="Refresh devices" Description="Look again after plugging in or removing a device.">
+          <Button Command="{Binding RefreshCommand}" AutomationProperties.Name="Refresh devices">
+            <StackPanel Orientation="Horizontal" Spacing="6"><c:LineIcon Data="{StaticResource Icon.Refresh}" /><TextBlock Text="Refresh" /></StackPanel>
+          </Button>
+        </c:SettingRow>
+      </c:SettingsCard>
+    </StackPanel>
 
-    <TextBlock Classes="cardTitle" Text="Preview" />
-    <c:SettingsCard>
-      <c:SettingRow Title="Preview sample rate" IsEnabled="{Binding CanChoose}">
-        <ComboBox ItemsSource="{Binding SampleRates}" SelectedItem="{Binding SampleRate}" AutomationProperties.Name="Preview sample rate" />
-      </c:SettingRow>
-      <c:SettingRow Title="Preview channels" IsEnabled="{Binding CanChoose}">
-        <ComboBox ItemsSource="{Binding ChannelCounts}" SelectedItem="{Binding Channels}" AutomationProperties.Name="Preview channels" />
-      </c:SettingRow>
-      <c:SettingRow Title="Preview" Description="Captures and converts PCM to show the levels. It does not play or broadcast audio.">
-        <StackPanel Classes="actions" Orientation="Horizontal" Spacing="8">
-          <Button Content="Start preview" Command="{Binding StartCommand}" />
-          <Button Content="Stop preview" Command="{Binding StopCommand}" />
-        </StackPanel>
-      </c:SettingRow>
-    </c:SettingsCard>
-    <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Margin="4,0" AutomationProperties.Name="{Binding Status}" />
-    <TextBlock Classes="muted" Margin="4,0" Text="Go Live uses the saved profile's quality settings, not these preview settings." />
+    <StackPanel Classes="group" Spacing="8">
+      <TextBlock Classes="cardTitle" Text="Preview" />
+      <c:SettingsCard>
+        <c:SettingRow Title="Preview sample rate" IsEnabled="{Binding CanChoose}">
+          <ComboBox ItemsSource="{Binding SampleRates}" SelectedItem="{Binding SampleRate}" AutomationProperties.Name="Preview sample rate" />
+        </c:SettingRow>
+        <c:SettingRow Title="Preview channels" IsEnabled="{Binding CanChoose}">
+          <ComboBox ItemsSource="{Binding ChannelCounts}" SelectedItem="{Binding Channels}" AutomationProperties.Name="Preview channels" />
+        </c:SettingRow>
+        <c:SettingRow Title="Preview" Description="Captures and converts PCM to show the levels. It does not play or broadcast audio.">
+          <StackPanel Classes="actions" Orientation="Horizontal" Spacing="8">
+            <Button Content="Start preview" Command="{Binding StartCommand}" />
+            <Button Content="Stop preview" Command="{Binding StopCommand}" />
+          </StackPanel>
+        </c:SettingRow>
+      </c:SettingsCard>
+      <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Margin="4,0" AutomationProperties.Name="{Binding Status}" />
+      <TextBlock Classes="muted" Margin="4,0" Text="Go Live uses the saved profile's quality settings, not these preview settings." />
+    </StackPanel>
   </StackPanel>
 </UserControl>

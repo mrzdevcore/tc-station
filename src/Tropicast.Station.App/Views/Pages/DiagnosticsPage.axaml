@@ -8,19 +8,21 @@
     <StackPanel Classes="page">
       <TextBlock Classes="pageTitle" Text="Diagnostics" />
       <TextBlock Classes="pageIntro" Text="Safe diagnostics for support. Nothing is uploaded automatically." />
-      <c:SettingsCard>
-        <c:SettingRow Title="Log directory" Description="Where the app writes its structured logs.">
-          <SelectableTextBlock x:Name="LogDirectory" Classes="code" TextWrapping="Wrap" MaxWidth="320" TextAlignment="Right" />
-        </c:SettingRow>
-        <c:SettingRow Title="Export diagnostics"
-                      Description="A ZIP with app and OS versions, anonymous device formats, broadcast counters and recent structured logs. Profiles, passwords, endpoints, metadata, device names and IDs, audio and raw errors are excluded.">
-          <Button x:Name="ExportDiagnosticsButton" Click="OnExportDiagnostics" AutomationProperties.Name="Export diagnostics">
-            <StackPanel Orientation="Horizontal" Spacing="6"><c:LineIcon Data="{StaticResource Icon.Folder}" /><TextBlock Text="Export diagnostics" /></StackPanel>
-          </Button>
-        </c:SettingRow>
-      </c:SettingsCard>
-      <TextBlock x:Name="DiagnosticStatus" Classes="muted" Margin="4,0"
-                 Text="Choose a destination; nothing is uploaded automatically." />
+      <StackPanel Classes="group" Spacing="8">
+        <c:SettingsCard>
+          <c:SettingRow Title="Log directory" Description="Where the app writes its structured logs.">
+            <SelectableTextBlock x:Name="LogDirectory" Classes="code" TextWrapping="Wrap" MaxWidth="320" TextAlignment="Right" />
+          </c:SettingRow>
+          <c:SettingRow Title="Export diagnostics"
+                        Description="A ZIP with app and OS versions, anonymous device formats, broadcast counters and recent structured logs. Profiles, passwords, endpoints, metadata, device names and IDs, audio and raw errors are excluded.">
+            <Button x:Name="ExportDiagnosticsButton" Click="OnExportDiagnostics" AutomationProperties.Name="Export diagnostics">
+              <StackPanel Orientation="Horizontal" Spacing="6"><c:LineIcon Data="{StaticResource Icon.Folder}" /><TextBlock Text="Export diagnostics" /></StackPanel>
+            </Button>
+          </c:SettingRow>
+        </c:SettingsCard>
+        <TextBlock x:Name="DiagnosticStatus" Classes="muted" Margin="4,0"
+                   Text="Choose a destination; nothing is uploaded automatically." />
+      </StackPanel>
     </StackPanel>
   </ScrollViewer>
 </UserControl>

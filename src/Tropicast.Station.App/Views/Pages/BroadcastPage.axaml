@@ -11,116 +11,122 @@
       <TextBlock Classes="pageTitle" Text="Broadcast" />
       <TextBlock Classes="pageIntro" Text="Choose where to broadcast and what to send, then Go Live from the bar below." />
 
-      <TextBlock Classes="cardTitle" Text="Destination" />
-      <c:SettingsCard>
-        <c:SettingRow Title="Broadcast to" Description="A station of your Tropicast account, or your own Icecast server.">
-          <Border Classes="segmented">
-            <StackPanel Orientation="Horizontal">
-              <RadioButton x:Name="UseStationOption" GroupName="BroadcastTarget" Content="Tropicast station"
-                           IsChecked="{Binding Broadcast.UseStation}" IsEnabled="{Binding !Broadcast.IsActive}"
-                           AutomationProperties.Name="A station of my Tropicast account" />
-              <RadioButton x:Name="UseProfileOption" GroupName="BroadcastTarget" Content="Manual profile"
-                           IsChecked="{Binding Broadcast.UseProfile}" IsEnabled="{Binding !Broadcast.IsActive}"
-                           AutomationProperties.Name="A manual connection profile (advanced)" />
+      <StackPanel Classes="group" Spacing="8">
+        <TextBlock Classes="cardTitle" Text="Destination" />
+        <c:SettingsCard>
+          <c:SettingRow Title="Broadcast to" Description="A station of your Tropicast account, or your own Icecast server.">
+            <Border Classes="segmented">
+              <StackPanel Orientation="Horizontal">
+                <RadioButton x:Name="UseStationOption" GroupName="BroadcastTarget" Content="Tropicast station"
+                             IsChecked="{Binding Broadcast.UseStation}" IsEnabled="{Binding !Broadcast.IsActive}"
+                             AutomationProperties.Name="A station of my Tropicast account" />
+                <RadioButton x:Name="UseProfileOption" GroupName="BroadcastTarget" Content="Manual profile"
+                             IsChecked="{Binding Broadcast.UseProfile}" IsEnabled="{Binding !Broadcast.IsActive}"
+                             AutomationProperties.Name="A manual connection profile (advanced)" />
+              </StackPanel>
+            </Border>
+          </c:SettingRow>
+          <c:SettingRow Title="Tropicast account" Description="Opens the browser to approve this computer. No password is typed here.">
+            <c:SettingRow.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="Broadcast.UseStation" />
+                <Binding Path="Account.IsSignedOut" />
+              </MultiBinding>
+            </c:SettingRow.IsVisible>
+            <Button x:Name="SignInButton" Classes="accent" Content="Sign in with Tropicast" Command="{Binding Account.SignInCommand}"
+                    AutomationProperties.Name="Sign in with Tropicast"
+                    AutomationProperties.HelpText="Opens the browser to approve this computer. No password is typed here." />
+          </c:SettingRow>
+          <c:SettingRow Title="Approve this code in your browser" Description="The page that opened in your browser asks for it.">
+            <c:SettingRow.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="Broadcast.UseStation" />
+                <Binding Path="Account.IsSigningIn" />
+              </MultiBinding>
+            </c:SettingRow.IsVisible>
+            <StackPanel Spacing="8">
+              <TextBlock x:Name="UserCode" Classes="code" Text="{Binding Account.UserCode}" FontSize="26" FontWeight="Bold"
+                         HorizontalAlignment="Right" AutomationProperties.Name="{Binding Account.UserCode}" />
+              <StackPanel Classes="actions" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                <Button Content="Open the page again" Command="{Binding Account.OpenSignInPageCommand}" />
+                <Button x:Name="CancelSignInButton" Content="Cancel" Command="{Binding Account.SignInCancelCommand}" />
+              </StackPanel>
             </StackPanel>
-          </Border>
-        </c:SettingRow>
-        <c:SettingRow Title="Tropicast account" Description="Opens the browser to approve this computer. No password is typed here.">
-          <c:SettingRow.IsVisible>
-            <MultiBinding Converter="{x:Static BoolConverters.And}">
-              <Binding Path="Broadcast.UseStation" />
-              <Binding Path="Account.IsSignedOut" />
-            </MultiBinding>
-          </c:SettingRow.IsVisible>
-          <Button x:Name="SignInButton" Classes="accent" Content="Sign in with Tropicast" Command="{Binding Account.SignInCommand}"
-                  AutomationProperties.Name="Sign in with Tropicast"
-                  AutomationProperties.HelpText="Opens the browser to approve this computer. No password is typed here." />
-        </c:SettingRow>
-        <c:SettingRow Title="Approve this code in your browser" Description="The page that opened in your browser asks for it.">
-          <c:SettingRow.IsVisible>
-            <MultiBinding Converter="{x:Static BoolConverters.And}">
-              <Binding Path="Broadcast.UseStation" />
-              <Binding Path="Account.IsSigningIn" />
-            </MultiBinding>
-          </c:SettingRow.IsVisible>
-          <StackPanel Spacing="8">
-            <TextBlock x:Name="UserCode" Classes="code" Text="{Binding Account.UserCode}" FontSize="26" FontWeight="Bold"
-                       HorizontalAlignment="Right" AutomationProperties.Name="{Binding Account.UserCode}" />
-            <StackPanel Classes="actions" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-              <Button Content="Open the page again" Command="{Binding Account.OpenSignInPageCommand}" />
-              <Button x:Name="CancelSignInButton" Content="Cancel" Command="{Binding Account.SignInCancelCommand}" />
+          </c:SettingRow>
+          <c:SettingRow Title="Station" Description="The station this computer broadcasts to.">
+            <c:SettingRow.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="Broadcast.UseStation" />
+                <Binding Path="Account.IsSignedIn" />
+              </MultiBinding>
+            </c:SettingRow.IsVisible>
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <ComboBox x:Name="StationPicker" Classes="field" ItemsSource="{Binding Account.Stations}"
+                        SelectedItem="{Binding Account.SelectedStation}" IsEnabled="{Binding Account.CanChooseStation}"
+                        AutomationProperties.Name="Station to broadcast to">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="account:AccountStation"><TextBlock Text="{Binding DisplayName}" /></DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+              <Button Classes="icon" Command="{Binding Account.RefreshStationsCommand}" ToolTip.Tip="Refresh stations"
+                      AutomationProperties.Name="Refresh stations">
+                <c:LineIcon Data="{StaticResource Icon.Refresh}" />
+              </Button>
             </StackPanel>
-          </StackPanel>
-        </c:SettingRow>
-        <c:SettingRow Title="Station" Description="The station this computer broadcasts to.">
-          <c:SettingRow.IsVisible>
-            <MultiBinding Converter="{x:Static BoolConverters.And}">
-              <Binding Path="Broadcast.UseStation" />
-              <Binding Path="Account.IsSignedIn" />
-            </MultiBinding>
-          </c:SettingRow.IsVisible>
-          <StackPanel Orientation="Horizontal" Spacing="6">
-            <ComboBox x:Name="StationPicker" Classes="field" ItemsSource="{Binding Account.Stations}"
-                      SelectedItem="{Binding Account.SelectedStation}" IsEnabled="{Binding Account.CanChooseStation}"
-                      AutomationProperties.Name="Station to broadcast to">
-              <ComboBox.ItemTemplate>
-                <DataTemplate x:DataType="account:AccountStation"><TextBlock Text="{Binding DisplayName}" /></DataTemplate>
-              </ComboBox.ItemTemplate>
-            </ComboBox>
-            <Button Classes="icon" Command="{Binding Account.RefreshStationsCommand}" ToolTip.Tip="Refresh stations"
-                    AutomationProperties.Name="Refresh stations">
-              <c:LineIcon Data="{StaticResource Icon.Refresh}" />
-            </Button>
-          </StackPanel>
-        </c:SettingRow>
-        <c:SettingRow Title="Connection profile" Description="For your own Icecast server." IsVisible="{Binding Broadcast.UseProfile}">
-          <StackPanel Orientation="Horizontal" Spacing="6">
-            <ComboBox x:Name="BroadcastProfilePicker" Classes="field" ItemsSource="{Binding Profiles.Profiles}"
-                      SelectedItem="{Binding Profiles.SelectedProfile}" IsEnabled="{Binding Profiles.CanManage}"
-                      AutomationProperties.Name="Broadcast connection profile">
-              <ComboBox.ItemTemplate>
-                <DataTemplate x:DataType="profiles:ConnectionProfile"><TextBlock Text="{Binding Name}" /></DataTemplate>
-              </ComboBox.ItemTemplate>
-            </ComboBox>
-            <Button Classes="icon" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:AppPage.Profiles}"
-                    ToolTip.Tip="Edit connection profiles" AutomationProperties.Name="Edit connection profiles">
-              <c:LineIcon Data="{StaticResource Icon.Edit}" />
-            </Button>
-          </StackPanel>
-        </c:SettingRow>
-        <c:SettingRow Title="Stream settings" Description="Saved with the station or the profile.">
-          <TextBlock x:Name="SavedStreamSettings" Classes="muted" Text="{Binding Broadcast.StreamSettings}" MaxWidth="300"
-                     TextAlignment="Right" AutomationProperties.Name="{Binding Broadcast.StreamSettings}" />
-        </c:SettingRow>
-      </c:SettingsCard>
-      <TextBlock x:Name="AccountStatus" Classes="muted" Text="{Binding Account.Status}" Margin="4,0"
-                 IsVisible="{Binding Broadcast.UseStation}" AutomationProperties.Name="{Binding Account.Status}" />
+          </c:SettingRow>
+          <c:SettingRow Title="Connection profile" Description="For your own Icecast server." IsVisible="{Binding Broadcast.UseProfile}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <ComboBox x:Name="BroadcastProfilePicker" Classes="field" ItemsSource="{Binding Profiles.Profiles}"
+                        SelectedItem="{Binding Profiles.SelectedProfile}" IsEnabled="{Binding Profiles.CanManage}"
+                        AutomationProperties.Name="Broadcast connection profile">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="profiles:ConnectionProfile"><TextBlock Text="{Binding Name}" /></DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+              <Button Classes="icon" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:AppPage.Profiles}"
+                      ToolTip.Tip="Edit connection profiles" AutomationProperties.Name="Edit connection profiles">
+                <c:LineIcon Data="{StaticResource Icon.Edit}" />
+              </Button>
+            </StackPanel>
+          </c:SettingRow>
+          <c:SettingRow Title="Stream settings" Description="Saved with the station or the profile.">
+            <TextBlock x:Name="SavedStreamSettings" Classes="muted" Text="{Binding Broadcast.StreamSettings}" MaxWidth="300"
+                       TextAlignment="Right" AutomationProperties.Name="{Binding Broadcast.StreamSettings}" />
+          </c:SettingRow>
+        </c:SettingsCard>
+        <TextBlock x:Name="AccountStatus" Classes="muted" Text="{Binding Account.Status}" Margin="4,0"
+                   IsVisible="{Binding Broadcast.UseStation}" AutomationProperties.Name="{Binding Account.Status}" />
+      </StackPanel>
 
-      <TextBlock Classes="cardTitle" Text="Audio" />
-      <c:SettingsCard>
-        <c:SettingRow Title="Microphone / input"
-                      Description="{Binding Audio.SelectedInput.Label, FallbackValue='None selected', TargetNullValue='None selected'}">
-          <Button Content="Change" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:AppPage.AudioSource}"
-                  AutomationProperties.Name="Change the audio source" />
-        </c:SettingRow>
-        <c:SettingRow Title="Application / system output"
-                      Description="{Binding Audio.SelectedOutput.Label, FallbackValue='None selected', TargetNullValue='None selected'}" />
-        <c:SettingRow Title="Levels" Description="Peak and RMS meters, clipping and the silence warning.">
-          <Button Content="Open" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:AppPage.Levels}"
-                  AutomationProperties.Name="Open levels and silence" />
-        </c:SettingRow>
-      </c:SettingsCard>
+      <StackPanel Classes="group" Spacing="8">
+        <TextBlock Classes="cardTitle" Text="Audio" />
+        <c:SettingsCard>
+          <c:SettingRow Title="Microphone / input"
+                        Description="{Binding Audio.SelectedInput.Label, FallbackValue='None selected', TargetNullValue='None selected'}">
+            <Button Content="Change" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:AppPage.AudioSource}"
+                    AutomationProperties.Name="Change the audio source" />
+          </c:SettingRow>
+          <c:SettingRow Title="Application / system output"
+                        Description="{Binding Audio.SelectedOutput.Label, FallbackValue='None selected', TargetNullValue='None selected'}" />
+          <c:SettingRow Title="Levels" Description="Peak and RMS meters, clipping and the silence warning.">
+            <Button Content="Open" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:AppPage.Levels}"
+                    AutomationProperties.Name="Open levels and silence" />
+          </c:SettingRow>
+        </c:SettingsCard>
+      </StackPanel>
 
-      <TextBlock Classes="cardTitle" Text="Status" />
-      <c:SettingsCard>
-        <StackPanel Margin="20,14" Spacing="6">
-          <TextBlock x:Name="BroadcastStatus" Text="{Binding Broadcast.Status}" TextWrapping="Wrap"
-                     AutomationProperties.Name="{Binding Broadcast.Status}" />
-          <TextBlock x:Name="OutputStatus" Text="{Binding Broadcast.OutputStatus}" TextWrapping="Wrap"
-                     IsVisible="{Binding Broadcast.HasOutputStatus}" AutomationProperties.Name="{Binding Broadcast.OutputStatus}" />
-          <TextBlock Classes="muted" Text="{Binding Broadcast.Diagnostics}" AutomationProperties.Name="{Binding Broadcast.Diagnostics}" />
-        </StackPanel>
-      </c:SettingsCard>
+      <StackPanel Classes="group" Spacing="8">
+        <TextBlock Classes="cardTitle" Text="Status" />
+        <c:SettingsCard>
+          <StackPanel Margin="20,14" Spacing="6">
+            <TextBlock x:Name="BroadcastStatus" Text="{Binding Broadcast.Status}" TextWrapping="Wrap"
+                       AutomationProperties.Name="{Binding Broadcast.Status}" />
+            <TextBlock x:Name="OutputStatus" Text="{Binding Broadcast.OutputStatus}" TextWrapping="Wrap"
+                       IsVisible="{Binding Broadcast.HasOutputStatus}" AutomationProperties.Name="{Binding Broadcast.OutputStatus}" />
+            <TextBlock Classes="muted" Text="{Binding Broadcast.Diagnostics}" AutomationProperties.Name="{Binding Broadcast.Diagnostics}" />
+          </StackPanel>
+        </c:SettingsCard>
+      </StackPanel>
     </StackPanel>
   </ScrollViewer>
 </UserControl>

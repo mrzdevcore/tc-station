@@ -8,7 +8,7 @@
   <ScrollViewer>
     <StackPanel Classes="page">
       <TextBlock Classes="pageTitle" Text="Levels &amp; silence" />
-      <views:AudioLevelsView x:Name="AudioLevels" DataContext="{Binding Audio.Levels}" />
+      <views:AudioLevelsView x:Name="AudioLevels" />
     </StackPanel>
   </ScrollViewer>
 </UserControl>

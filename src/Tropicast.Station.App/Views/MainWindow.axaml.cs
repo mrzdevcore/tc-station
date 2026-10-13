@@ -3,6 +3,7 @@ using Avalonia.Controls.Notifications;
 using System.ComponentModel;
 using Avalonia.Input;
 using Avalonia.LogicalTree;
+using Avalonia.Threading;
 using Tropicast.Station.App.Controls;
 using Tropicast.Station.App.ViewModels;
 
@@ -19,7 +20,10 @@ public partial class MainWindow : Window
 
     public MainWindow() => InitializeComponent();
 
-    private IEnumerable<(AppPage Page, Control View)> Pages =>
+    private SearchPage[]? _searchIndex;
+    private bool _searchQueued;
+
+    private IEnumerable<(AppPage Page, Control View)> PageViews =>
     [
         (AppPage.Broadcast, BroadcastPage), (AppPage.AudioSource, AudioSourcePage), (AppPage.Levels, LevelsPage),
         (AppPage.Account, AccountPage), (AppPage.Profiles, ProfilesPage), (AppPage.Diagnostics, DiagnosticsPage),
@@ -67,45 +71,92 @@ public partial class MainWindow : Window
         {
             ApplySearch(model);
         }
-        else if (e.PropertyName == nameof(MainViewModel.SelectedPage) && Shell.DisplayMode == SplitViewDisplayMode.CompactOverlay)
+        // A page picked in the overlaid sidebar closes it; a page the search moves to does not, so typing goes on.
+        else if (e.PropertyName == nameof(MainViewModel.SelectedPage) && Shell.DisplayMode == SplitViewDisplayMode.CompactOverlay
+                 && !SearchBox.IsKeyboardFocusWithin)
         {
             Shell.IsPaneOpen = false;
         }
     }
 
+    /// <summary>What the search filters on one page: its rows, its groups (heading, notes and card) and its intro text.</summary>
+    private sealed record SearchPage(AppPage Page, SettingRow[] Rows, SearchGroup[] Groups, TextBlock[] Intros);
+
+    /// <summary>A "group" panel; a "keep" group (level meters, the profile actions) stays whenever its page shows.</summary>
+    private sealed record SearchGroup(Panel Panel, SettingRow[] Rows, bool Keep);
+
+    private SearchPage[] SearchIndex => _searchIndex ??= BuildSearchIndex();
+
+    private SearchPage[] BuildSearchIndex()
+    {
+        var index = PageViews.Select(entry =>
+        {
+            var controls = entry.View.GetLogicalDescendants().ToList();
+            var groups = controls.OfType<Panel>().Where(panel => panel.Classes.Contains("group"))
+                .Select(panel => new SearchGroup(panel, panel.GetLogicalDescendants().OfType<SettingRow>().ToArray(),
+                    panel.Classes.Contains("keep")))
+                .ToArray();
+            return new SearchPage(entry.Page, controls.OfType<SettingRow>().ToArray(), groups,
+                controls.OfType<TextBlock>().Where(text => text.Classes.Contains("pageIntro")).ToArray());
+        }).ToArray();
+        // Rows appear, disappear and change text with the app state (sign-in, toggles, status lines): search again then.
+        foreach (var row in index.SelectMany(page => page.Rows))
+        {
+            row.PropertyChanged += OnRowChanged;
+        }
+        return index;
+    }
+
+    private void OnRowChanged(object? sender, Avalonia.AvaloniaPropertyChangedEventArgs e)
+    {
+        if ((e.Property != IsVisibleProperty && e.Property != SettingRow.TitleProperty && e.Property != SettingRow.DescriptionProperty)
+            || _searchQueued || DataContext is not MainViewModel { SearchText: var text } || text.Trim().Length == 0)
+        {
+            return;
+        }
+        _searchQueued = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _searchQueued = false;
+            if (DataContext is MainViewModel model)
+            {
+                ApplySearch(model);
+            }
+        }, DispatcherPriority.Background);
+    }
+
     /// <summary>
-    /// Keeps the rows whose title or description match the search, and the pages that still have one
-    /// (or whose name matches: then the whole page shows).
+    /// Keeps the shown rows whose title or description match, the groups that still have one, and the pages
+    /// that still have one (or whose name matches: then the whole page shows).
     /// </summary>
     private void ApplySearch(MainViewModel model)
     {
         var query = model.SearchText.Trim();
+        var searching = query.Length > 0;
         var pages = new HashSet<AppPage>();
-        foreach (var (page, view) in Pages)
+        foreach (var page in SearchIndex)
         {
-            var rows = view.GetLogicalDescendants().OfType<SettingRow>().ToList();
-            var wholePage = query.Length == 0 || MainViewModel.PageLabel(page).Contains(query, StringComparison.CurrentCultureIgnoreCase);
-            var any = wholePage;
-            foreach (var row in rows)
+            var wholePage = !searching || MainViewModel.PageLabel(page.Page).Contains(query, StringComparison.CurrentCultureIgnoreCase);
+            var any = false;
+            foreach (var row in page.Rows)
             {
-                var hit = wholePage || row.Matches(query);
-                row.IsFilteredOut = !hit;
+                // A row its page hides (Opus bitrate with Opus off, sign-in steps) is no result.
+                var hit = row.IsVisible && row.Matches(query);
+                row.IsFilteredOut = !wholePage && !hit;
                 any |= hit;
             }
-            // Cards without a match (and their heading) go too.
-            foreach (var card in view.GetLogicalDescendants().OfType<SettingsCard>())
+            foreach (var group in page.Groups)
             {
-                var empty = !card.Children.OfType<SettingRow>().Any(row => !row.IsFilteredOut) && !wholePage;
-                card.Classes.Set("filtered", empty);
-                if (card.Parent is Panel panel && panel.Children.IndexOf(card) is > 0 and var index
-                    && panel.Children[index - 1] is TextBlock heading && heading.Classes.Contains("cardTitle"))
-                {
-                    heading.Classes.Set("filtered", empty);
-                }
+                var empty = !group.Rows.Any(row => row.IsVisible && !row.IsFilteredOut);
+                group.Panel.Classes.Set("filtered", !wholePage && !group.Keep && empty);
             }
-            if (any)
+            foreach (var intro in page.Intros)
             {
-                pages.Add(page);
+                intro.Classes.Set("filtered", !wholePage);
+            }
+            if (wholePage || any)
+            {
+                pages.Add(page.Page);
             }
         }
         model.ShowPages(pages);
