@@ -1,6 +1,5 @@
 using NAudio.Wave;
 using Microsoft.Extensions.Logging.Abstractions;
-using NAudio.CoreAudioApi;
 #pragma warning disable CA2201 // Deliberately simulate native WASAPI HRESULT failures.
 
 namespace Tropicast.Station.Audio.Windows.Tests;
@@ -8,16 +7,19 @@ namespace Tropicast.Station.Audio.Windows.Tests;
 public sealed class WindowsProviderTests
 {
     [Fact]
-    public void Every_endpoint_notification_requests_refresh()
+    public void Capture_packets_are_copied_into_a_reused_buffer_and_silent_ones_become_zeros()
     {
-        var count = 0;
-        var notifications = new WindowsEndpointNotifications(() => count++);
-        notifications.OnDeviceAdded("usb");
-        notifications.OnDeviceRemoved("usb");
-        notifications.OnDeviceStateChanged("usb", DeviceState.Disabled);
-        notifications.OnDefaultDeviceChanged(DataFlow.Capture, Role.Multimedia, "usb");
-        notifications.OnPropertyValueChanged("usb", default);
-        Assert.Equal(5, count);
+        byte[] buffer = [];
+        Assert.Equal(4, WasapiPackets.Copy([1, 2, 3, 4], silent: false, ref buffer));
+        Assert.Equal(new byte[] { 1, 2, 3, 4 }, buffer);
+        var reused = buffer;
+
+        Assert.Equal(2, WasapiPackets.Copy([9, 9], silent: true, ref buffer));
+        Assert.Same(reused, buffer);
+        Assert.Equal(new byte[] { 0, 0 }, buffer[..2]);
+
+        Assert.Equal(6, WasapiPackets.Copy([5, 6, 7, 8, 9, 10], silent: false, ref buffer));
+        Assert.Equal(new byte[] { 5, 6, 7, 8, 9, 10 }, buffer);
     }
 
     [Fact]
