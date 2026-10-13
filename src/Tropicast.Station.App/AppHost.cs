@@ -49,6 +49,9 @@ internal static class AppHost
         builder.Services.AddSingleton<AudioDevicesViewModel>();
         builder.Services.AddSingleton<AudioLevelsViewModel>();
         builder.Services.AddSingleton<BroadcastViewModel>();
+        builder.Services.AddSingleton<GeneralSettingsViewModel>();
+        builder.Services.AddSingleton<ITraySupport, TraySupport>();
+        builder.Services.AddSingleton<ITrayNotice, TrayNotice>();
         builder.Services.AddSingleton<IBroadcastConfirmation, BroadcastConfirmation>();
         builder.Services.AddSingleton<Diagnostics>();
         builder.Services.AddSingleton<UnhandledErrors>();
@@ -58,6 +61,7 @@ internal static class AppHost
             {
                 DataContext = sp.GetRequiredService<MainViewModel>(),
                 Diagnostics = sp.GetRequiredService<Diagnostics>(),
+                TrayNotice = sp.GetRequiredService<ITrayNotice>(),
             };
             if (sp.GetRequiredService<IBroadcastConfirmation>() is BroadcastConfirmation confirmation)
             {

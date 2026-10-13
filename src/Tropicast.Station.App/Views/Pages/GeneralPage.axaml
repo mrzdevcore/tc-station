@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Tropicast.Station.App.ViewModels"
+             xmlns:c="using:Tropicast.Station.App.Controls"
+             x:Class="Tropicast.Station.App.Views.Pages.GeneralPage"
+             x:DataType="vm:MainViewModel">
+  <ScrollViewer>
+    <StackPanel x:Name="Root" Classes="page" x:DataType="vm:GeneralSettingsViewModel">
+      <TextBlock Classes="pageTitle" Text="General" />
+      <StackPanel Classes="group" Spacing="8">
+        <TextBlock Classes="cardTitle" Text="Window" />
+        <c:SettingsCard>
+          <c:SettingRow Title="Keep running in the tray when the window is closed or minimized" Description="{Binding TrayHint}">
+            <ToggleSwitch x:Name="KeepInTrayToggle" IsChecked="{Binding KeepInTray}" OnContent="" OffContent=""
+                          AutomationProperties.Name="Keep running in the tray when the window is closed or minimized" />
+          </c:SettingRow>
+        </c:SettingsCard>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

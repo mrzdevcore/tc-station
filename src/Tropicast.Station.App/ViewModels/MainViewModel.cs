@@ -6,7 +6,7 @@ using Tropicast.Station.Core;
 namespace Tropicast.Station.App.ViewModels;
 
 /// <summary>The pages of the main window, in sidebar order.</summary>
-public enum AppPage { Broadcast, AudioSource, Levels, Account, Profiles, Diagnostics, About }
+public enum AppPage { Broadcast, AudioSource, Levels, General, Account, Profiles, Diagnostics, About }
 
 /// <summary>A sidebar entry: a section caption (no page) or a page with its icon name.</summary>
 public sealed record NavEntry(string Label, AppPage? Page = null, string? Icon = null)
@@ -24,6 +24,7 @@ public sealed partial class MainViewModel : ViewModelBase
         new("Audio source", AppPage.AudioSource, "Microphone"),
         new("Levels & silence", AppPage.Levels, "Levels"),
         new("Settings"),
+        new("General", AppPage.General, "Settings"),
         new("Account", AppPage.Account, "User"),
         new("Connection profiles", AppPage.Profiles, "Server"),
         new("Diagnostics", AppPage.Diagnostics, "Diagnostics"),
@@ -31,7 +32,7 @@ public sealed partial class MainViewModel : ViewModelBase
     ];
 
     public MainViewModel(IAppInfo appInfo, AccountViewModel account, ProfileEditorViewModel profiles, AudioDevicesViewModel audio,
-        BroadcastViewModel broadcast)
+        BroadcastViewModel broadcast, GeneralSettingsViewModel settings)
     {
         ArgumentNullException.ThrowIfNull(appInfo);
         Title = appInfo.ProductName;
@@ -40,6 +41,7 @@ public sealed partial class MainViewModel : ViewModelBase
         Profiles = profiles;
         Audio = audio;
         Broadcast = broadcast;
+        Settings = settings;
         NavEntries = new(AllEntries);
         SelectedNav = AllEntries[1];
     }
@@ -52,6 +54,7 @@ public sealed partial class MainViewModel : ViewModelBase
     public ProfileEditorViewModel Profiles { get; }
     public AudioDevicesViewModel Audio { get; }
     public BroadcastViewModel Broadcast { get; }
+    public GeneralSettingsViewModel Settings { get; }
 
     /// <summary>Sidebar entries left by the settings search, captions included.</summary>
     public ObservableCollection<NavEntry> NavEntries { get; }

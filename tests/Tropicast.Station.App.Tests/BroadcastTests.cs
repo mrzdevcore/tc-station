@@ -126,6 +126,27 @@ public sealed class BroadcastTests
     }
 
     [AvaloniaFact]
+    public async Task Confirmation_brings_a_hidden_window_back_as_it_was()
+    {
+        var window = new Window();
+        window.Show();
+        window.WindowState = WindowState.Maximized;
+        window.Hide();
+        var confirmation = new BroadcastConfirmation { Owner = window };
+
+        var pending = confirmation.ConfirmStopAsync(false);
+
+        Assert.True(window.IsVisible);
+        Assert.Equal(WindowState.Maximized, window.WindowState);
+        var dialog = Assert.Single(window.OwnedWindows);
+        dialog.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+        window.KeyRelease(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+        Assert.False(await pending);
+        Assert.Equal(WindowState.Maximized, window.WindowState);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Closing_live_window_can_be_cancelled_then_confirmed_and_stops_encoder()
     {
         var profile = TestProfiles.Valid();
@@ -150,6 +171,51 @@ public sealed class BroadcastTests
         window.Close();
         await UntilAsync(() => !window.IsVisible);
         Assert.False(model.Broadcast.HasActiveBroadcast);
+        Assert.Equal(1, encoder.Session.Disposals);
+    }
+
+    [AvaloniaFact]
+    public async Task Closing_to_the_tray_keeps_broadcasting_and_quit_asks_first()
+    {
+        var profile = TestProfiles.Valid();
+        var encoder = new FakeEncoder();
+        var confirmation = new Confirmation();
+        using var host = CreateHost(profile, encoder, confirmation, services =>
+            services.AddSingleton<Tropicast.Station.Core.Settings.IAppSettingsStore>(new MemoryAppSettings
+            {
+                Settings = new(KeepInTray: true, TrayNoticeShown: true),
+            }));
+        var window = host.Services.GetRequiredService<MainWindow>();
+        window.Show();
+        var model = host.Services.GetRequiredService<MainViewModel>();
+        await model.Settings.LoadCommand.ExecuteAsync(null);
+        using var tray = new BroadcastTray(window, model.Broadcast);
+        window.Tray = tray;
+        await model.Profiles.LoadCommand.ExecuteAsync(null);
+        await model.Audio.RefreshCommand.ExecuteAsync(null);
+        model.Profiles.SelectedProfile = profile;
+        model.Audio.SelectedOutput = model.Audio.Outputs[0];
+        await model.Broadcast.GoLiveCommand.ExecuteAsync(null);
+        await UntilAsync(() => model.Broadcast.State == BroadcastState.Live);
+
+        window.Close();
+        await UntilAsync(() => !window.IsVisible);
+        Assert.Equal(0, confirmation.Requests);
+        Assert.Equal(BroadcastState.Live, model.Broadcast.State);
+        Assert.True(tray.Item("Stop broadcast").IsEnabled);
+
+        tray.Item("Stop broadcast").Command!.Execute(null);
+        await UntilAsync(() => confirmation.Requests == 1);
+        Assert.Equal(BroadcastState.Live, model.Broadcast.State);
+
+        tray.Item("Quit Tropicast Station").Command!.Execute(null);
+        await UntilAsync(() => confirmation.Requests == 2);
+        Assert.True(window.IsVisible);
+        Assert.True(model.Broadcast.HasActiveBroadcast);
+
+        confirmation.Allow = true;
+        tray.Item("Quit Tropicast Station").Command!.Execute(null);
+        await UntilAsync(() => !model.Broadcast.HasActiveBroadcast && !window.IsVisible);
         Assert.Equal(1, encoder.Session.Disposals);
     }
 
@@ -227,7 +293,8 @@ public sealed class BroadcastTests
         window.Close();
     }
 
-    private static Microsoft.Extensions.Hosting.IHost CreateHost(ConnectionProfile profile, FakeEncoder encoder, Confirmation confirmation)
+    private static Microsoft.Extensions.Hosting.IHost CreateHost(ConnectionProfile profile, FakeEncoder encoder, Confirmation confirmation,
+        Action<IServiceCollection>? more = null)
     {
         var secrets = new MemorySecrets();
         secrets.Items[profile.Id] = "test-only";
@@ -238,6 +305,7 @@ public sealed class BroadcastTests
             services.AddSingleton<IAudioCaptureProvider, ToneAudioCaptureProvider>();
             services.AddSingleton<IBroadcastEncoder>(encoder);
             services.AddSingleton<IBroadcastConfirmation>(confirmation);
+            more?.Invoke(services);
         });
     }
 

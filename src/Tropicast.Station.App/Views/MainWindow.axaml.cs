@@ -15,6 +15,20 @@ public partial class MainWindow : Window
     private bool _checkingClose;
     private WindowNotificationManager? _notifications;
     internal Diagnostics? Diagnostics { get; set; }
+
+    /// <summary>The tray icon, set by the app once created. Without one the window never hides.</summary>
+    internal BroadcastTray? Tray { get; set; }
+
+    /// <summary>Shown the first time the window hides to the tray.</summary>
+    internal ITrayNotice? TrayNotice { get; set; }
+
+    private bool _quitRequested;
+    private bool _hiding;
+    private bool _started;
+    private long? _deactivatedAt;
+    private WindowState _restoreState = WindowState.Normal;
+
+    private bool HidesToTray => Tray is not null && DataContext is MainViewModel { Settings.KeepInTray: true };
     /// <summary>Below this window width the sidebar collapses to icons and opens over the page.</summary>
     private const double CompactWidth = 760;
 
@@ -26,7 +40,7 @@ public partial class MainWindow : Window
     private IEnumerable<(AppPage Page, Control View)> PageViews =>
     [
         (AppPage.Broadcast, BroadcastPage), (AppPage.AudioSource, AudioSourcePage), (AppPage.Levels, LevelsPage),
-        (AppPage.Account, AccountPage), (AppPage.Profiles, ProfilesPage), (AppPage.Diagnostics, DiagnosticsPage),
+        (AppPage.General, GeneralPage), (AppPage.Account, AccountPage), (AppPage.Profiles, ProfilesPage), (AppPage.Diagnostics, DiagnosticsPage),
         (AppPage.About, AboutPage),
     ];
 
@@ -165,12 +179,20 @@ public partial class MainWindow : Window
     protected override void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
+        // Opened fires again each time the window comes back from the tray: start up once.
+        if (_started)
+        {
+            return;
+        }
+        _started = true;
         DiagnosticsPage.Diagnostics = Diagnostics;
+        Deactivated += (_, _) => NoteDeactivated();
         if (DataContext is MainViewModel model)
         {
             model.PropertyChanged += OnModelChanged;
             _notifications = new(this) { Position = NotificationPosition.TopRight, MaxItems = 1 };
             model.Audio.Levels.SilenceStarted += OnSilenceStarted;
+            model.Settings.LoadCommand.Execute(null);
             model.Account.LoadCommand.Execute(null);
             model.Profiles.LoadCommand.Execute(null);
             model.Audio.RefreshCommand.Execute(null);
@@ -204,8 +226,100 @@ public partial class MainWindow : Window
         }
     }
 
+    protected override void OnPropertyChanged(Avalonia.AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property != WindowStateProperty)
+        {
+            return;
+        }
+        if ((WindowState)change.NewValue! is WindowState.Minimized)
+        {
+            if (HidesToTray)
+            {
+                _ = HideToTrayAsync();
+            }
+        }
+        else
+        {
+            // What "Open" restores: normal, maximized or full screen as the window last was.
+            _restoreState = (WindowState)change.NewValue!;
+        }
+    }
+
+    /// <summary>Hides the window (and its taskbar or Dock entry); the app and any broadcast keep running.</summary>
+    internal async Task HideToTrayAsync()
+    {
+        if (_hiding)
+        {
+            return;
+        }
+        _hiding = true;
+        try
+        {
+            if (DataContext is MainViewModel model && !model.Settings.TrayNoticeShown && TrayNotice is not null)
+            {
+                await model.Settings.MarkTrayNoticeShownAsync();
+                // The notice needs the window on screen: bring a minimized window back first.
+                WindowState = _restoreState;
+                await TrayNotice.ShowAsync(this);
+            }
+            Hide();
+        }
+        finally
+        {
+            _hiding = false;
+        }
+    }
+
+    /// <summary>Tray "Open" (as the window last was) and "Maximize window".</summary>
+    internal void ShowFromTray(bool maximize = false)
+    {
+        Show();
+        WindowState = maximize ? WindowState.Maximized : _restoreState;
+        Activate();
+    }
+
+    /// <summary>The window lost focus, for example to a click on the tray icon.</summary>
+    internal void NoteDeactivated() => _deactivatedAt = Environment.TickCount64;
+
+    /// <summary>Tray left click: brings the window to the front, or hides it when it already is.</summary>
+    internal void ToggleFromTray()
+    {
+        // Clicking a Windows tray icon takes focus from the window just before the click arrives:
+        // a window that was active a moment ago counts as in front.
+        var inFront = IsActive || (_deactivatedAt is { } at && Environment.TickCount64 - at < 500);
+        if (IsVisible && inFront && WindowState != WindowState.Minimized)
+        {
+            _ = HideToTrayAsync();
+        }
+        else
+        {
+            ShowFromTray();
+        }
+    }
+
+    /// <summary>Tray "Quit": closes for real, after the live-broadcast confirmation (shown on the window).</summary>
+    internal void Quit()
+    {
+        if (!IsVisible)
+        {
+            ShowFromTray();
+        }
+        _quitRequested = true;
+        Close();
+    }
+
     protected override async void OnClosing(WindowClosingEventArgs e)
     {
+        var quitting = _quitRequested || e.CloseReason is WindowCloseReason.ApplicationShutdown or WindowCloseReason.OSShutdown;
+        if (!quitting && !_closeApproved && HidesToTray)
+        {
+            e.Cancel = true;
+            base.OnClosing(e);
+            await HideToTrayAsync();
+            return;
+        }
         if (!_closeApproved && DataContext is MainViewModel model && model.Broadcast.HasActiveBroadcast)
         {
             e.Cancel = true;
@@ -221,6 +335,10 @@ public partial class MainWindow : Window
                 {
                     _closeApproved = true;
                     Close();
+                }
+                else
+                {
+                    _quitRequested = false;
                 }
             }
             finally

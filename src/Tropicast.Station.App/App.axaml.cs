@@ -34,7 +34,20 @@ public partial class App : Application
             errors.Owner = desktop.MainWindow;
             errors.Shutdown = () => desktop.Shutdown(1);
             errors.Attach();
-            _tray = new BroadcastTray(desktop.MainWindow, _host.Services.GetRequiredService<ViewModels.BroadcastViewModel>());
+            var window = (MainWindow)desktop.MainWindow;
+            _tray = new BroadcastTray(window, _host.Services.GetRequiredService<ViewModels.BroadcastViewModel>());
+            window.Tray = _tray;
+            // macOS: clicking the Dock icon of a window hidden to the menu bar brings it back.
+            if (TryGetFeature(typeof(IActivatableLifetime)) is IActivatableLifetime activatable)
+            {
+                activatable.Activated += (_, args) =>
+                {
+                    if (args.Kind == ActivationKind.Reopen)
+                    {
+                        window.ShowFromTray();
+                    }
+                };
+            }
             desktop.Exit += OnExit;
         }
 
