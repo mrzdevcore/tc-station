@@ -1,0 +1,32 @@
+# Dependency updates: weekly pull requests for the NuGet packages (central versions in
+# Directory.Packages.props, including the AvaloniaVersion property). Minor and patch updates are
+# grouped; majors come one package per PR. Security updates come as soon as an advisory is published.
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(nuget)"
+    groups:
+      # Every Avalonia package shares one version (AvaloniaVersion): always one PR for all of them, majors included.
+      avalonia:
+        patterns: ["Avalonia*"]
+        exclude-patterns: ["AvaloniaUI.DiagnosticsSupport"]
+      # Microsoft.Extensions.* follow the .NET release train together.
+      microsoft:
+        patterns: ["Microsoft.Extensions.*"]
+        update-types: [minor, patch]
+      tests:
+        patterns: ["xunit*", "Microsoft.NET.Test.Sdk"]
+        update-types: [minor, patch]
+      nuget-minor-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    ignore:
+      # Microsoft.Extensions majors track the .NET major (global.json): a planned upgrade, not a bot PR.
+      - dependency-name: "Microsoft.Extensions.*"
+        update-types: ["version-update:semver-major"]
