@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Microsoft.Win32;
 using NAudio.CoreAudioApi;
@@ -10,18 +9,18 @@ namespace Tropicast.Station.Audio.Windows;
 internal sealed class NAudioWasapiBackend : IWasapiBackend
 {
     private readonly MMDeviceEnumerator _enumerator = new();
-    private readonly WindowsEndpointNotifications _notifications;
+    private readonly MMDeviceNotificationClient _notifications;
     private volatile bool _disposed;
 
     internal NAudioWasapiBackend()
     {
-        _notifications = new WindowsEndpointNotifications(Notify);
-        var result = _enumerator.RegisterEndpointNotificationCallback(_notifications);
-        if (result != 0)
-        {
-            _enumerator.Dispose();
-            Marshal.ThrowExceptionForHR(result);
-        }
+        // Raised on a COM thread (no synchronization context): Notify only signals, the subscriber schedules the refresh.
+        _notifications = _enumerator.CreateNotificationClient(useSynchronizationContext: false);
+        _notifications.DeviceAdded += (_, _) => Notify();
+        _notifications.DeviceRemoved += (_, _) => Notify();
+        _notifications.DeviceStateChanged += (_, _) => Notify();
+        _notifications.DefaultDeviceChanged += (_, _) => Notify();
+        _notifications.PropertyValueChanged += (_, _) => Notify();
     }
 
     public event EventHandler? DevicesChanged;
@@ -42,7 +41,7 @@ internal sealed class NAudioWasapiBackend : IWasapiBackend
             foreach (var endpoint in _enumerator.EnumerateAudioEndPoints(flow, DeviceState.Active))
             {
                 using (endpoint)
-                using (var client = endpoint.AudioClient)
+                using (var client = endpoint.CreateAudioClient())
                 {
                     var format = WasapiFormats.Negotiate(client.MixFormat);
                     devices.Add(new(endpoint.ID, endpoint.FriendlyName,
@@ -77,7 +76,7 @@ internal sealed class NAudioWasapiBackend : IWasapiBackend
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         var device = _enumerator.GetDevice(deviceId);
-        WasapiCapture? capture = null;
+        WasapiRecorder? recorder = null;
         try
         {
             if (device.State != DeviceState.Active)
@@ -85,19 +84,31 @@ internal sealed class NAudioWasapiBackend : IWasapiBackend
                 throw new IOException("The selected Windows audio endpoint is no longer active.");
             }
 
-            capture = device.DataFlow == DataFlow.Capture
-                ? new WasapiCapture(device, useEventSync: false, audioBufferMillisecondsLength: 100)
-                : new WasapiLoopbackCapture(device);
-            var format = WasapiFormats.Negotiate(capture.WaveFormat);
-            capture.ShareMode = AudioClientShareMode.Shared;
-            capture.WaveFormat = format.Encoding == PcmEncoding.Signed16
-                ? new WaveFormat(format.SampleRate, 16, format.Channels)
-                : WaveFormat.CreateIeeeFloatWaveFormat(format.SampleRate, format.Channels);
-            return new NAudioSource(device, capture, format);
+            AudioFormat format;
+            using (var client = device.CreateAudioClient())
+            {
+                format = WasapiFormats.Negotiate(client.MixFormat);
+            }
+            // Shared mode at the mix rate and channel count, 100 ms buffers and polling, as with NAudio 2's WasapiCapture;
+            // the engine converts PCM24/32 to the requested float32 (or keeps PCM16).
+            var builder = new WasapiRecorderBuilder()
+                .WithDevice(device)
+                .WithSharedMode()
+                .WithPollingSync()
+                .WithBufferLength(100)
+                .WithFormat(format.Encoding == PcmEncoding.Signed16
+                    ? new WaveFormat(format.SampleRate, 16, format.Channels)
+                    : WaveFormat.CreateIeeeFloatWaveFormat(format.SampleRate, format.Channels));
+            if (device.DataFlow == DataFlow.Render)
+            {
+                builder.WithLoopbackCapture();
+            }
+            recorder = builder.Build();
+            return new NAudioSource(device, recorder, format);
         }
         catch
         {
-            capture?.Dispose();
+            recorder?.Dispose();
             device.Dispose();
             throw;
         }
@@ -117,44 +128,51 @@ internal sealed class NAudioWasapiBackend : IWasapiBackend
         if (!_disposed)
         {
             _disposed = true;
-            var result = _enumerator.UnregisterEndpointNotificationCallback(_notifications);
+            _notifications.Dispose();
             _enumerator.Dispose();
-            Marshal.ThrowExceptionForHR(result);
         }
     }
 
     private sealed class NAudioSource : IWasapiSource
     {
         private readonly MMDevice _device;
-        private readonly WasapiCapture _capture;
+        private readonly WasapiRecorder _recorder;
+        // The recorder's span is only valid during its callback: copy it into a reused buffer for the session.
+        private byte[] _buffer = [];
         private bool _disposed;
 
-        internal NAudioSource(MMDevice device, WasapiCapture capture, AudioFormat format)
+        internal NAudioSource(MMDevice device, WasapiRecorder recorder, AudioFormat format)
         {
             _device = device;
-            _capture = capture;
+            _recorder = recorder;
             Format = format;
-            capture.DataAvailable += OnData;
-            capture.RecordingStopped += OnStopped;
+            recorder.DataAvailable += OnData;
+            recorder.RecordingStopped += OnStopped;
         }
 
         public AudioFormat Format { get; }
         public event EventHandler<WasapiDataEventArgs>? DataAvailable;
         public event EventHandler<WasapiStoppedEventArgs>? Stopped;
-        public void Start() => _capture.StartRecording();
-        public void Stop() => _capture.StopRecording();
-        private void OnData(object? sender, WaveInEventArgs e) => DataAvailable?.Invoke(this, new(e.Buffer, e.BytesRecorded));
+        public void Start() => _recorder.StartRecording();
+        public void Stop() => _recorder.StopRecording();
+
+        private void OnData(ReadOnlySpan<byte> data, AudioClientBufferFlags flags, long devicePosition, long qpcPosition)
+        {
+            var count = WasapiPackets.Copy(data, flags.HasFlag(AudioClientBufferFlags.Silent), ref _buffer);
+            DataAvailable?.Invoke(this, new(_buffer, count));
+        }
+
         private void OnStopped(object? sender, StoppedEventArgs e) => Stopped?.Invoke(this, new(e.Exception));
 
         public void Dispose()
         {
             if (!_disposed)
             {
-                _capture.DataAvailable -= OnData;
-                _capture.RecordingStopped -= OnStopped;
+                _recorder.DataAvailable -= OnData;
+                _recorder.RecordingStopped -= OnStopped;
                 try
                 {
-                    _capture.Dispose();
+                    _recorder.Dispose();
                 }
                 finally
                 {
@@ -163,6 +181,32 @@ internal sealed class NAudioWasapiBackend : IWasapiBackend
                 }
             }
         }
+    }
+}
+
+internal static class WasapiPackets
+{
+    /// <summary>
+    /// Copies a capture packet, valid only during the recorder's callback, into a reused buffer (grown as needed).
+    /// A packet flagged silent becomes zeros: WASAPI may leave anything in its data.
+    /// </summary>
+    /// <returns>The number of bytes copied.</returns>
+    internal static int Copy(ReadOnlySpan<byte> data, bool silent, ref byte[] buffer)
+    {
+        if (buffer.Length < data.Length)
+        {
+            buffer = new byte[data.Length];
+        }
+        var target = buffer.AsSpan(0, data.Length);
+        if (silent)
+        {
+            target.Clear();
+        }
+        else
+        {
+            data.CopyTo(target);
+        }
+        return data.Length;
     }
 }
 

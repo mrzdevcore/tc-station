@@ -79,13 +79,13 @@ Demo mode supplies 440 Hz, 44.1 kHz mono signed-16 input + 660 Hz, 48 kHz stereo
 
 ### Windows WASAPI capture
 
-App auto-selects `WindowsAudioCaptureProvider` on Windows unless `--demo-audio` passed. Active capture endpoints (incl. USB mixer/interface inputs) and render endpoints listed separately; Windows **Multimedia** default labelled. Capture targets explicit endpoint ID, never silently follows different default. Add/remove/state/default/property notifications trigger refresh via `IMMNotificationClient`. Removing active endpoint stops capture + shows guidance; replug refreshes picker.
+App auto-selects `WindowsAudioCaptureProvider` on Windows unless `--demo-audio` passed. Active capture endpoints (incl. USB mixer/interface inputs) and render endpoints listed separately; Windows **Multimedia** default labelled. Capture targets explicit endpoint ID, never silently follows different default. Add/remove/state/default/property notifications (NAudio `MMDeviceNotificationClient`) trigger refresh. Removing active endpoint stops capture + shows guidance; replug refreshes picker.
 
 Render-endpoint loopback captures **all audio played through that endpoint**, not single app/process. Pick endpoint your player uses. WASAPI may deliver no packets while render endpoint idle; adapter doesn't invent silence or play keepalive tone. Continuous loopback needs actively playing source.
 
 Capture uses WASAPI **shared mode**, 100 ms native buffers, worker-thread init (no captured UI sync context). PCM16 + float32 mix formats preserved. PCM24/PCM32 mix formats request float32 via WASAPI shared-mode conversion, keeping endpoint rate/channel count. Picker format therefore = PCM supplied by adapter, not necessarily physical bit depth. Common `PcmConverter` converts to chosen encoder format. Non-PCM formats + rates/channel counts outside shared contract rejected explicitly.
 
-NAudio callback buffers copied before reuse. Bounded queue (256 packets, max 2 s PCM by byte budget) fails explicitly on overrun, no silent drop. Capture errors + device invalidation close stream; cancel/stop unblocks readers; dispose joins native capture thread on worker before releasing endpoint.
+Captured through NAudio 3 `WasapiRecorder` (shared mode, polling, 100 ms buffers); each callback packet copied before the callback returns, and packets WASAPI flags silent become zeros. Bounded queue (256 packets, max 2 s PCM by byte budget) fails explicitly on overrun, no silent drop. Capture errors + device invalidation close stream; cancel/stop unblocks readers; dispose joins native capture thread on worker before releasing endpoint.
 
 If Windows denies mic access, app shows settings path: **Settings → Privacy & security → Microphone** (Windows 10: **Settings → Privacy → Microphone**). Enable **Microphone access** and **Let desktop apps access your microphone**. Adapter checks explicit Windows mic-consent denials as preflight hint, then treats WASAPI access-denied as authoritative. Loopback not blocked by mic-only denial. Exclusive-device use, stopped Windows Audio service, unsupported format, invalidation have separate guidance.
 
@@ -106,7 +106,7 @@ dotnet test tests/Tropicast.Station.Audio.Windows.Tests -c Release `
 
 Test captures each endpoint 30 min (1 h total), requires ≥98% expected PCM frame count, fails on malformed packets, capture errors, queue overruns. Continuity check, **not proof that the result is glitch-free**: listen to/analyze encoded recording during station qualification once encoder integrated (#8). Broadcast publishing not available yet.
 
-NAudio.Wasapi/NAudio.Core 2.4.0 MIT-licensed; package license metadata + upstream attribution at <https://github.com/naudio/NAudio>.
+NAudio.Wasapi/NAudio.Core 3.1.0 MIT-licensed; package license metadata + upstream attribution at <https://github.com/naudio/NAudio>.
 
 ### Linux PulseAudio / PipeWire capture
 
