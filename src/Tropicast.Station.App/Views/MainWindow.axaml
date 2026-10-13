@@ -131,6 +131,8 @@
                                  IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=AudioSource}" />
           <pages:LevelsPage x:Name="LevelsPage"
                             IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Levels}" />
+          <pages:GeneralPage x:Name="GeneralPage"
+                             IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=General}" />
           <pages:AccountPage x:Name="AccountPage"
                              IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Account}" />
           <pages:ProfilesPage x:Name="ProfilesPage"

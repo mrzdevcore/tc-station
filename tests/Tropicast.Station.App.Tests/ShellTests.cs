@@ -53,7 +53,7 @@ public sealed class ShellTests
         Assert.True(window.Find<StackPanel>("NoResults")!.IsVisible);
 
         model.SearchText = "";
-        Assert.Equal(9, model.NavEntries.Count);
+        Assert.Equal(10, model.NavEntries.Count);
         Assert.False(model.HasNoSearchResults);
         Assert.DoesNotContain(rows, row => row.IsFilteredOut);
         window.Close();
