@@ -27,7 +27,7 @@ public sealed class MainWindowTests
         Assert.True(window.IsVisible);
         Assert.IsType<MainViewModel>(window.DataContext);
         Assert.Equal("Tropicast Station", window.Title);
-        Assert.Equal("v0.1.0", window.FindControl<TextBlock>("VersionText")?.Text);
+        Assert.Equal("v0.1.0", window.Find<TextBlock>("VersionText")?.Text);
 
         window.Close();
     }

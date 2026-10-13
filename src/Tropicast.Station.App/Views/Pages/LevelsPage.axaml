@@ -1,0 +1,14 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Tropicast.Station.App.ViewModels"
+             xmlns:c="using:Tropicast.Station.App.Controls"
+             xmlns:views="using:Tropicast.Station.App.Views"
+             x:Class="Tropicast.Station.App.Views.Pages.LevelsPage"
+             x:DataType="vm:MainViewModel">
+  <ScrollViewer>
+    <StackPanel Classes="page">
+      <TextBlock Classes="pageTitle" Text="Levels &amp; silence" />
+      <views:AudioLevelsView x:Name="AudioLevels" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Tropicast.Station.App.ViewModels"
+             xmlns:c="using:Tropicast.Station.App.Controls"
+             x:Class="Tropicast.Station.App.Views.Pages.AboutPage"
+             x:DataType="vm:MainViewModel">
+  <ScrollViewer>
+    <StackPanel Classes="page">
+      <TextBlock Classes="pageTitle" Text="About" />
+      <StackPanel Classes="group" Spacing="8">
+        <c:SettingsCard>
+          <c:SettingRow Title="{Binding Title}" Description="Broadcast audio from this computer to Tropicast or to your own Icecast server.">
+            <TextBlock x:Name="VersionText" Text="{Binding Version}" />
+          </c:SettingRow>
+          <c:SettingRow Title="Licence" Description="Apache License 2.0. Third-party notices ship with the app." />
+          <c:SettingRow Title="Theme" Description="Follows the light or dark setting of your system." />
+        </c:SettingsCard>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

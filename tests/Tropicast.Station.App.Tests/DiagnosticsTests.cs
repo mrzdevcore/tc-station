@@ -145,9 +145,9 @@ public sealed class DiagnosticsTests
             using var host = AppHost.Create(["--demo-audio"], services => services.AddSingleton(logs));
             var window = host.Services.GetRequiredService<MainWindow>();
             window.Show();
-            var button = window.FindControl<Button>("ExportDiagnosticsButton")!;
+            var button = window.Find<Button>("ExportDiagnosticsButton")!;
             Assert.Equal("Export diagnostics", Avalonia.Automation.AutomationProperties.GetName(button));
-            Assert.Contains(directory, window.FindControl<TextBlock>("LogDirectory")!.Text!, StringComparison.Ordinal);
+            Assert.Contains(directory, window.Find<TextBlock>("LogDirectory")!.Text!, StringComparison.Ordinal);
             await File.WriteAllTextAsync(Path.Combine(directory, "station-corrupt.jsonl"), "credential-bearing bad record",
                 TestContext.Current.CancellationToken);
             using var destination = new MemoryStream();

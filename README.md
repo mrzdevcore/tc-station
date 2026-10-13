@@ -56,7 +56,7 @@ Deps point inward: `App` → `Audio` / `Encoding` / `Infrastructure` → `Core`.
 
 ## Audio sources and preview
 
-**Audio source** tab groups devices into **Microphones / inputs** and **Application / system output**. Pick one device, encoder sample rate (44.1 or 48 kHz), mono/stereo, then **Start preview**. Consumes captured PCM through shared conversion pipeline; no playback, encoding, or Icecast publish. Levels + broadcast controls = separate MVP issues.
+**Audio source** page groups devices into **Microphones / inputs** and **Application / system output**. Pick one device, encoder sample rate (44.1 or 48 kHz), mono/stereo, then **Start preview**. Consumes captured PCM through shared conversion pipeline; no playback, encoding, or Icecast publish. Levels + broadcast controls = separate MVP issues.
 
 Windows: lists active WASAPI inputs + playback devices (loopback sources). Linux: PulseAudio/PipeWire inputs + sink monitor sources. macOS: Core Audio inputs (incl. virtual) + ScreenCaptureKit **System audio** source.
 Run synthetic adapter on any OS for demos:
@@ -126,7 +126,7 @@ TC_TEST_PULSE=1 dotnet test tests/Tropicast.Station.Audio.Linux.Tests -c Release
 
 Test also needs `pacat` (same utils/libpulse package). Creates uniquely named null sink + remapped input, plays only generated 600 Hz tone into sink, checks input/monitor signal + stop/restart, then removes sources and checks auto capture shutdown. Doesn't record personal mics or change desktop defaults; removes its modules/child processes after. CI runs against isolated PulseAudio server; `TC_TEST_PULSE_DEFAULTS=1` also checks default changes — enable only on isolated server. PipeWire capture also exercised locally. Real USB/mixer hardware + sustained audible-glitch qualification remain station-side; synthetic tests don't prove those.
 
-Audio preview stays local-only. Use **Go Live** in Broadcast tab to publish selected source via encoding backend.
+Audio preview stays local-only. Use **Go Live** in the broadcast bar to publish selected source via encoding backend.
 
 ### macOS Core Audio / system audio capture
 
@@ -171,7 +171,7 @@ POC sends generated 600 Hz tone to unique mount, checks listener HTTP success + 
 
 ## Audio levels and warnings
 
-Broadcast tab keeps per-channel **peak** (amber) + **RMS** (green) meters beside primary controls. Audio source tab has same meters. **Preview** checks levels without transmitting; **Go Live** monitors exact normalized float32 PCM feeding encoder (after channel mapping + resampling, before MP3 compression). Levels refresh 25 Hz, in dBFS; zero audio shown at -90 dBFS meter floor. Numeric readings can exceed 0 dBFS though bars stop at 0.
+**Levels & silence** page shows per-channel **peak** (amber) + **RMS** (green) meters, clipping and silence warning settings; the broadcast bar at the bottom of every page keeps compact RMS meters. **Preview** checks levels without transmitting; **Go Live** monitors exact normalized float32 PCM feeding encoder (after channel mapping + resampling, before MP3 compression). Levels refresh 25 Hz, in dBFS; zero audio shown at -90 dBFS meter floor. Numeric readings can exceed 0 dBFS though bars stop at 0.
 
 **CLIPPING** shows per channel for samples ≥ -0.1 dBFS, 2 s hold refreshed by further clipping. **SILENCE** shows when every channel stays below configured RMS threshold for configured duration. Defaults -50 dBFS, 5 s; expand **Silence warning settings** to pick -90 to -10 dBFS and 1–60 s. Changes restart silence countdown. Silent loopback endpoint delivering no packets also detected. Signal recovery clears silence warning; stop, device loss, or new capture clears readings + clipping hold.
 
@@ -199,8 +199,8 @@ TC_DASHBOARD_URL=http://localhost:8080 TC_DASHBOARD_WEB_URL=https://localhost:84
 
 ## Go Live / Stop
 
-First **Broadcast** tab = three-step workflow: pick **a station of the Tropicast account** (or, under *manual connection profile*, a saved profile), pick **one input or system-output source**, press **Go Live**. Manual profiles need credentials saved in the Connection profiles tab first. Current encoder needs **audio/mpeg** profile + bundled FFmpeg above. Starting broadcast replaces any active local preview with capture in selected encoder format.
-Broadcast tab shows selected saved profile's bitrate, rate, channels, stream name. Unsaved editor changes and source picker's **preview** rate/channels don't override saved broadcast settings.
+Window = sidebar (search, pages) + settings cards: one row per setting, title and description left, control right. Below 760 px wide the sidebar collapses to icons; Ctrl+F focuses search. **Broadcast** page: pick **a station of the Tropicast account** (or, under *manual connection profile*, a saved profile), pick **one input or system-output source** (Audio source page), press **Go Live** in the broadcast bar, which stays at the bottom of every page with state, elapsed time, reconnect countdown and **Retry now**. Manual profiles need credentials saved on the Connection profiles page first. Current encoder needs **audio/mpeg** profile + bundled FFmpeg above. Starting broadcast replaces any active local preview with capture in selected encoder format.
+Broadcast page shows selected saved profile's bitrate, rate, channels, stream name. Unsaved editor changes and source picker's **preview** rate/channels don't override saved broadcast settings.
 
 Status badge/text expose **Idle → Connecting → Live → Stopping → Idle**, plus **Error** on capture/connection/encoder failure. **Live** begins when encoder sends MP3 bytes, not just on auth success. Elapsed counter accumulates actual Live time (excl. reconnect downtime), retains last session duration after stop.
 Idle system-output endpoint may not emit audio yet → stays Connecting.
@@ -234,7 +234,7 @@ Optional **stream name**, **description**, **genre**, **website URL** identify s
 
 Names/genres ≤128 chars, descriptions/URLs ≤512. Control chars rejected; website URLs must be absolute HTTP/HTTPS without credentials. Metadata public: never put passwords/secrets there. Encoder publishes MP3 (`audio/mpeg`) or Ogg Opus (`audio/ogg`, 48/64/96 kbps, always 48 kHz); `audio/aac` profiles are for connection testing only.
 
-**Also publish Ogg Opus** (MP3 profiles whose mount ends in `.mp3`) adds a second stream from the same capture on the matching `.opus` mount (`/stations/42/live.mp3` → `/stations/42/live.opus`) at the profile's **Opus bitrate** (default 64 kbps; 48 kbps on the free plan). Each stream has its own FFmpeg child, `PUT` with its own `Content-Type`, `Ice-Bitrate` and `Ice-Audio-Info`, and its own reconnect backoff: losing or being refused one stream (e.g. the station's plan allows only MP3, so Tropicast answers 401 on `.opus`) does not stop the other. The broadcast stays **Live** while any stream is live, the Broadcast tab lists each stream's state, and the broadcast ends in **Error** only when every stream has failed permanently.
+**Also publish Ogg Opus** (MP3 profiles whose mount ends in `.mp3`) adds a second stream from the same capture on the matching `.opus` mount (`/stations/42/live.mp3` → `/stations/42/live.opus`) at the profile's **Opus bitrate** (default 64 kbps; 48 kbps on the free plan). Each stream has its own FFmpeg child, `PUT` with its own `Content-Type`, `Ice-Bitrate` and `Ice-Audio-Info`, and its own reconnect backoff: losing or being refused one stream (e.g. the station's plan allows only MP3, so Tropicast answers 401 on `.opus`) does not stop the other. The broadcast stays **Live** while any stream is live, the Broadcast page lists each stream's state, and the broadcast ends in **Error** only when every stream has failed permanently.
 
 **Save profile** writes non-secret settings to user's app-data dir:
 
@@ -252,7 +252,7 @@ Broadcasting resolves saved profile via `IBroadcastTargetProvider`. `ManualBroad
 
 ## Logging and safe diagnostics
 
-**Diagnostics** tab shows user log dir; **Export diagnostics** opens ZIP save dialog. Nothing uploaded automatically. Bundle has `diagnostics.json` (app/OS/runtime versions, arch, anonymous device kinds/default flags/native formats, broadcast state, reconnect/downtime counters) and `logs/recent.jsonl` (up to 5 recent log files).
+**Diagnostics** page shows user log dir; **Export diagnostics** opens ZIP save dialog. Nothing uploaded automatically. Bundle has `diagnostics.json` (app/OS/runtime versions, arch, anonymous device kinds/default flags/native formats, broadcast state, reconnect/downtime counters) and `logs/recent.jsonl` (up to 5 recent log files).
 
 Logs use .NET `ILogger` structured events + small rolling JSON-lines provider; no new logging framework. Files roll at **1 MiB**, **10 files retained**, in:
 

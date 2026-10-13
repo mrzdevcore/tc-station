@@ -126,7 +126,7 @@ public sealed class AccountTests
         window.Show();
         var model = host.Services.GetRequiredService<MainViewModel>();
         await UntilAsync(() => !model.Account.IsBusy && model.Audio.Inputs.Count > 0);
-        Assert.True(window.FindControl<Button>("SignInButton")!.IsEffectivelyVisible);
+        Assert.True(window.Find<Button>("SignInButton")!.IsEffectivelyVisible);
         Assert.False(model.Broadcast.GoLiveCommand.CanExecute(null));
 
         await model.Account.SignInCommand.ExecuteAsync(null);
@@ -135,7 +135,7 @@ public sealed class AccountTests
         Assert.Equal([new Uri("https://app.test/device?code=BCDF-GHJK")], browser.Opened);
         Assert.True(model.Broadcast.UseStation);
         Assert.Equal("Radio Mada (My radios)", model.Account.SelectedStation!.DisplayName);
-        Assert.True(window.FindControl<ComboBox>("StationPicker")!.IsEffectivelyVisible);
+        Assert.True(window.Find<ComboBox>("StationPicker")!.IsEffectivelyVisible);
         Assert.Contains("Radio Mada", model.Broadcast.StreamSettings, StringComparison.Ordinal);
 
         model.Audio.SelectedInput = model.Audio.Inputs[0];

@@ -5,6 +5,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Tropicast.Station.App.ViewModels;
+using Tropicast.Station.App.Controls;
 using Tropicast.Station.App.Views;
 using Tropicast.Station.Audio;
 
@@ -36,9 +37,9 @@ public sealed class AudioLevelsTests
         Assert.Equal("Left", audio.Levels.ChannelLevels[0].Name);
         Assert.Equal("Right", audio.Levels.ChannelLevels[1].Name);
         Assert.InRange(audio.Levels.ChannelLevels[0].Peak, -14.1, -13.9);
-        var view = window.FindControl<AudioLevelsView>("BroadcastLevels")!;
-        Assert.Equal(2, view.FindControl<ItemsControl>("ChannelMeters")!.Items.Count);
-        Assert.Contains("Monitoring", view.FindControl<TextBlock>("LevelStatus")!.Text!, StringComparison.Ordinal);
+        var view = window.Find<AudioLevelsView>("AudioLevels")!;
+        Assert.Equal(2, view.Find<ItemsControl>("ChannelMeters")!.Items.Count);
+        Assert.Contains("Monitoring", view.Find<TextBlock>("LevelStatus")!.Text!, StringComparison.Ordinal);
         Assert.False(host.Services.GetRequiredService<BroadcastViewModel>().HasActiveBroadcast);
         await audio.StopCommand.ExecuteAsync(null);
         audio.Levels.Refresh();
@@ -74,8 +75,8 @@ public sealed class AudioLevelsTests
         Assert.Equal(1, notifications);
         levels.Refresh();
         Assert.Equal(1, notifications);
-        var view = window.FindControl<AudioLevelsView>("BroadcastLevels")!;
-        Assert.Contains("Silence warning", view.FindControl<TextBlock>("LevelStatus")!.Text!, StringComparison.Ordinal);
+        var view = window.Find<AudioLevelsView>("AudioLevels")!;
+        Assert.Contains("Silence warning", view.Find<TextBlock>("LevelStatus")!.Text!, StringComparison.Ordinal);
         levels.SilenceThreshold = -60;
         Assert.False(levels.IsSilent);
         meter.Stop();
@@ -108,17 +109,17 @@ public sealed class AudioLevelsTests
     }
 
     [AvaloniaFact]
-    public void Expanded_meter_settings_do_not_push_primary_control_outside_small_window()
+    public void Levels_page_does_not_push_primary_control_outside_small_window()
     {
         using var host = AppHost.Create(["--demo-audio"]);
         var window = host.Services.GetRequiredService<MainWindow>();
         window.Width = 640;
         window.Height = 420;
         window.Show();
-        var meterView = window.FindControl<AudioLevelsView>("BroadcastLevels")!;
-        meterView.FindControl<Expander>("SilenceSettings")!.IsExpanded = true;
+        host.Services.GetRequiredService<MainViewModel>().SelectedPage = AppPage.Levels;
         window.UpdateLayout();
-        var button = window.FindControl<Button>("GoLiveButton")!;
+        Assert.True(window.Find<AudioLevelsView>("AudioLevels")!.Find<SettingsCard>("SilenceSettings")!.IsEffectivelyVisible);
+        var button = window.Find<Button>("GoLiveButton")!;
         var bottom = button.TranslatePoint(new Point(0, button.Bounds.Height), window);
         Assert.NotNull(bottom);
         Assert.True(button.Bounds.Height > 0);
