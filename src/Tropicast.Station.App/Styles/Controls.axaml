@@ -1,0 +1,227 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="using:Tropicast.Station.App.Controls"
+        xmlns:vm="using:Tropicast.Station.App.ViewModels">
+  <!-- Typography: page title 20, card heading 15, row title 14 medium, description 12 muted, caption 11. -->
+  <Style Selector="TextBlock.pageTitle">
+    <Setter Property="FontSize" Value="20" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+  <Style Selector="TextBlock.pageIntro">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="TextBlock.cardTitle">
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="4,12,0,0" />
+  </Style>
+  <Style Selector="TextBlock.rowTitle">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontWeight" Value="Medium" />
+  </Style>
+  <Style Selector="TextBlock.muted">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="TextBlock.caption">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+  </Style>
+  <Style Selector="TextBlock.code, SelectableTextBlock.code">
+    <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, monospace" />
+  </Style>
+
+  <!-- Page column: centred, at most 720px wide. -->
+  <Style Selector="StackPanel.page">
+    <Setter Property="MaxWidth" Value="720" />
+    <Setter Property="Margin" Value="28,24,28,32" />
+    <Setter Property="Spacing" Value="8" />
+  </Style>
+
+  <!-- Settings card and row. -->
+  <Style Selector="c|SettingsCard">
+    <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+  </Style>
+  <Style Selector="c|SettingRow">
+    <Setter Property="HorizontalContentAlignment" Value="Right" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="PART_Divider" Margin="20,0" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource DividerBrush}">
+          <Grid Name="PART_Grid" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" Margin="0,14">
+            <StackPanel Spacing="2" VerticalAlignment="Center" Margin="0,0,16,0">
+              <TextBlock Classes="rowTitle" Text="{TemplateBinding Title}" TextWrapping="Wrap" />
+              <TextBlock Classes="muted" Text="{TemplateBinding Description}"
+                         IsVisible="{TemplateBinding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            </StackPanel>
+            <ContentPresenter Name="PART_Content" Grid.Column="1" Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" VerticalAlignment="Center"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="c|SettingsCard.filtered, TextBlock.cardTitle.filtered">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+  <Style Selector="c|SettingRow:first /template/ Border#PART_Divider">
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="c|SettingRow:filtered /template/ Border#PART_Divider">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+  <Style Selector="c|SettingRow:narrow /template/ ContentPresenter#PART_Content">
+    <Setter Property="Grid.Row" Value="1" />
+    <Setter Property="Grid.Column" Value="0" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="Margin" Value="0,10,0,0" />
+  </Style>
+  <!-- Fields keep a steady width beside the text, and take the full width once wrapped. -->
+  <Style Selector="c|SettingRow TextBox.field, c|SettingRow ComboBox.field">
+    <Setter Property="Width" Value="280" />
+  </Style>
+  <Style Selector="c|SettingRow:narrow TextBox.field, c|SettingRow:narrow ComboBox.field">
+    <Setter Property="Width" Value="NaN" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+  <Style Selector="c|SettingRow:narrow StackPanel.actions">
+    <Setter Property="HorizontalAlignment" Value="Left" />
+  </Style>
+
+  <!-- Compact buttons; accent and danger variants. -->
+  <Style Selector="Button">
+    <Setter Property="Padding" Value="12,6" />
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
+  <Style Selector="Button.danger">
+    <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+  <Style Selector="Button.danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource DangerHoverBrush}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+  <Style Selector="Button.danger:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource DangerHoverBrush}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+  <Style Selector="Button.icon">
+    <Setter Property="Padding" Value="7" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="Button.link">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource SystemAccentColorDark1}" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Button.link:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="ComboBox, TextBox, NumericUpDown">
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
+
+  <!-- Segmented choice built from radio buttons. -->
+  <Style Selector="Border.segmented">
+    <Setter Property="Background" Value="{DynamicResource SidebarBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="3" />
+  </Style>
+  <Style Selector="Border.segmented RadioButton">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="PART_Segment" Background="Transparent" CornerRadius="6" Padding="12,5">
+          <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Border.segmented RadioButton:checked">
+    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+  </Style>
+  <Style Selector="Border.segmented RadioButton:checked /template/ Border#PART_Segment">
+    <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+  </Style>
+  <Style Selector="Border.segmented RadioButton:pointerover /template/ Border#PART_Segment">
+    <Setter Property="Background" Value="{DynamicResource NavHoverBrush}" />
+  </Style>
+  <Style Selector="Border.segmented RadioButton:checked:pointerover /template/ Border#PART_Segment">
+    <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+  </Style>
+  <Style Selector="Border.segmented RadioButton:focus-visible /template/ Border#PART_Segment">
+    <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+  <Style Selector="Border.segmented RadioButton:disabled">
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+
+  <!-- Sidebar navigation. -->
+  <Style Selector="ListBox.nav">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="8,0" />
+  </Style>
+  <Style Selector="ListBox.nav ListBoxItem" x:DataType="vm:NavEntry">
+    <Setter Property="IsEnabled" Value="{Binding IsSelectable}" />
+    <Setter Property="Padding" Value="10,7" />
+    <Setter Property="Margin" Value="0,1" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
+  <Style Selector="ListBox.nav ListBoxItem:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="ListBox.nav ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource NavHoverBrush}" />
+  </Style>
+  <Style Selector="ListBox.nav ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource NavSelectedBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+  </Style>
+  <Style Selector="ListBox.nav ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource NavSelectedBrush}" />
+  </Style>
+  <Style Selector="ListBox.nav ListBoxItem:selected:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+
+  <!-- Broadcast state pill: idle, busy (connecting, reconnecting, stopping), live, error. -->
+  <Style Selector="Border.state">
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="10,3" />
+    <Setter Property="Background" Value="{DynamicResource StateIdleBrush}" />
+  </Style>
+  <Style Selector="Border.state > TextBlock">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{DynamicResource StateIdleTextBrush}" />
+  </Style>
+  <Style Selector="Border.state.busy">
+    <Setter Property="Background" Value="{DynamicResource StateBusyBrush}" />
+  </Style>
+  <Style Selector="Border.state.busy > TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource StateBusyTextBrush}" />
+  </Style>
+  <Style Selector="Border.state.live, Border.state.error">
+    <Setter Property="Background" Value="{DynamicResource StateLiveBrush}" />
+  </Style>
+  <Style Selector="Border.state.live > TextBlock, Border.state.error > TextBlock">
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+</Styles>

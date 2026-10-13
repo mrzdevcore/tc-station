@@ -44,7 +44,7 @@ public sealed class ProfileEditorTests
         Assert.True(editor.SaveCommand.CanExecute(null));
         await editor.SaveCommand.ExecuteAsync(null);
         Assert.Equal("", editor.Password);
-        Assert.True(string.IsNullOrEmpty(window.FindControl<TextBox>("PasswordInput")?.Text));
+        Assert.True(string.IsNullOrEmpty(window.Find<TextBox>("PasswordInput")?.Text));
         Assert.Equal("sentinel-source-password", Assert.Single(secrets.Items).Value);
         await editor.EditCommand.ExecuteAsync(null);
         Assert.Equal("", editor.Password);
@@ -56,10 +56,11 @@ public sealed class ProfileEditorTests
         Assert.Equal("Local programming", editor.StreamDescription);
         Assert.Equal("Talk", editor.StreamGenre);
         Assert.Equal("https://example.com/studio", editor.StreamUrl);
-        window.FindControl<TabControl>("MainTabs")!.SelectedIndex = 2;
+        window.Find<ListBox>("MainNav")!.SelectedItem = host.Services.GetRequiredService<MainViewModel>().NavEntries
+            .Single(entry => entry.Page == AppPage.Profiles);
         window.UpdateLayout();
-        Assert.Equal(192, window.FindControl<ComboBox>("ProfileBitrate")!.SelectedItem);
-        Assert.Equal("Studio radio", window.FindControl<TextBox>("StreamNameInput")!.Text);
+        Assert.Equal(192, window.Find<ComboBox>("ProfileBitrate")!.SelectedItem);
+        Assert.Equal("Studio radio", window.Find<TextBox>("StreamNameInput")!.Text);
         editor.StreamDescription = "bad\r\nheader";
         Assert.False(editor.SaveCommand.CanExecute(null));
         editor.StreamDescription = "Local programming";

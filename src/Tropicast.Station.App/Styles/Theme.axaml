@@ -1,0 +1,50 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Station colours by theme variant (the window follows the system theme). Teal accent as in the dashboard. -->
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="SidebarBrush" Color="#F4F4F5" />
+      <SolidColorBrush x:Key="ContentBrush" Color="#FAFAFA" />
+      <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="CardBorderBrush" Color="#E4E4E7" />
+      <SolidColorBrush x:Key="DividerBrush" Color="#EDEDF0" />
+      <SolidColorBrush x:Key="MutedTextBrush" Color="#52525B" />
+      <SolidColorBrush x:Key="NavHoverBrush" Color="#EBEBED" />
+      <SolidColorBrush x:Key="NavSelectedBrush" Color="#E4E4E7" />
+      <SolidColorBrush x:Key="CodeBrush" Color="#F4F4F5" />
+      <SolidColorBrush x:Key="MeterPeakBrush" Color="#B45309" />
+      <SolidColorBrush x:Key="MeterRmsBrush" Color="#047857" />
+      <SolidColorBrush x:Key="ClippingBrush" Color="#B91C1C" />
+      <SolidColorBrush x:Key="SilenceBrush" Color="#B45309" />
+      <SolidColorBrush x:Key="StateIdleBrush" Color="#E4E4E7" />
+      <SolidColorBrush x:Key="StateIdleTextBrush" Color="#3F3F46" />
+      <SolidColorBrush x:Key="StateLiveBrush" Color="#DC2626" />
+      <SolidColorBrush x:Key="StateBusyBrush" Color="#FCD34D" />
+      <SolidColorBrush x:Key="StateBusyTextBrush" Color="#451A03" />
+      <SolidColorBrush x:Key="DangerBrush" Color="#B91C1C" />
+      <SolidColorBrush x:Key="DangerHoverBrush" Color="#991B1B" />
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="SidebarBrush" Color="#1B1B1E" />
+      <SolidColorBrush x:Key="ContentBrush" Color="#141416" />
+      <SolidColorBrush x:Key="CardBrush" Color="#1F1F23" />
+      <SolidColorBrush x:Key="CardBorderBrush" Color="#2E2E34" />
+      <SolidColorBrush x:Key="DividerBrush" Color="#2A2A2F" />
+      <SolidColorBrush x:Key="MutedTextBrush" Color="#A1A1AA" />
+      <SolidColorBrush x:Key="NavHoverBrush" Color="#25252A" />
+      <SolidColorBrush x:Key="NavSelectedBrush" Color="#2E2E34" />
+      <SolidColorBrush x:Key="CodeBrush" Color="#141416" />
+      <SolidColorBrush x:Key="MeterPeakBrush" Color="#F5B841" />
+      <SolidColorBrush x:Key="MeterRmsBrush" Color="#34D399" />
+      <SolidColorBrush x:Key="ClippingBrush" Color="#F87171" />
+      <SolidColorBrush x:Key="SilenceBrush" Color="#F5B841" />
+      <SolidColorBrush x:Key="StateIdleBrush" Color="#2E2E34" />
+      <SolidColorBrush x:Key="StateIdleTextBrush" Color="#E4E4E7" />
+      <SolidColorBrush x:Key="StateLiveBrush" Color="#DC2626" />
+      <SolidColorBrush x:Key="StateBusyBrush" Color="#FCD34D" />
+      <SolidColorBrush x:Key="StateBusyTextBrush" Color="#451A03" />
+      <SolidColorBrush x:Key="DangerBrush" Color="#DC2626" />
+      <SolidColorBrush x:Key="DangerHoverBrush" Color="#B91C1C" />
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>

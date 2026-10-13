@@ -32,7 +32,7 @@ public sealed class BroadcastTests
         using var tray = new BroadcastTray(window, model.Broadcast);
         await model.Profiles.LoadCommand.ExecuteAsync(null);
         await model.Audio.RefreshCommand.ExecuteAsync(null);
-        var button = window.FindControl<Button>("GoLiveButton")!;
+        var button = window.Find<Button>("GoLiveButton")!;
         Assert.False(model.Broadcast.GoLiveCommand.CanExecute(null));
         Assert.Equal("Go Live", AutomationProperties.GetName(button));
         model.Profiles.SelectedProfile = profile;
@@ -50,15 +50,15 @@ public sealed class BroadcastTests
         Assert.Equal(192, encoder.Options?.BitrateKbps);
         Assert.Equal(44100, encoder.Options?.Format.SampleRate);
         Assert.Equal(2, encoder.Options?.Format.Channels);
-        Assert.Contains("Saved radio", window.FindControl<TextBlock>("SavedStreamSettings")!.Text!, StringComparison.Ordinal);
+        Assert.Contains("Saved radio", window.Find<TextBlock>("SavedStreamSettings")!.Text!, StringComparison.Ordinal);
         Assert.False(model.Profiles.CanManage);
         Assert.False(model.Profiles.TestCommand.CanExecute(null));
         Assert.False(model.Profiles.SaveCommand.CanExecute(null));
         Assert.False(model.Audio.CanChoose);
         Assert.False(model.Audio.StopCommand.CanExecute(null));
-        Assert.False(window.FindControl<ComboBox>("BroadcastProfilePicker")!.IsEnabled);
-        Assert.True(window.FindControl<Button>("StopBroadcastButton")!.IsVisible);
-        Assert.Equal("Live", window.FindControl<TextBlock>("BroadcastState")!.Text);
+        Assert.False(window.Find<ComboBox>("BroadcastProfilePicker")!.IsEnabled);
+        Assert.True(window.Find<Button>("StopBroadcastButton")!.IsVisible);
+        Assert.Equal("Live", window.Find<TextBlock>("BroadcastState")!.Text);
         Assert.Contains("Live", Assert.Single(TrayIcon.GetIcons(Application.Current!)!).ToolTipText!, StringComparison.Ordinal);
         confirmation.Allow = false;
         await model.Broadcast.StopCommand.ExecuteAsync(null);
@@ -90,11 +90,11 @@ public sealed class BroadcastTests
         model.Profiles.SelectedProfile = profile;
         model.Audio.SelectedInput = model.Audio.Inputs[0];
         Dispatcher.UIThread.RunJobs();
-        Assert.True(window.FindControl<Button>("GoLiveButton")!.Focus());
+        Assert.True(window.Find<Button>("GoLiveButton")!.Focus());
         window.KeyPress(Key.Enter, Avalonia.Input.RawInputModifiers.None, PhysicalKey.Enter, null);
         window.KeyRelease(Key.Enter, Avalonia.Input.RawInputModifiers.None, PhysicalKey.Enter, null);
         await UntilAsync(() => model.Broadcast.State == BroadcastState.Live);
-        Assert.True(window.FindControl<Button>("StopBroadcastButton")!.Focus());
+        Assert.True(window.Find<Button>("StopBroadcastButton")!.Focus());
         window.KeyPress(Key.Enter, Avalonia.Input.RawInputModifiers.None, PhysicalKey.Enter, null);
         window.KeyRelease(Key.Enter, Avalonia.Input.RawInputModifiers.None, PhysicalKey.Enter, null);
         await UntilAsync(() => model.Broadcast.State == BroadcastState.Idle);
@@ -173,7 +173,7 @@ public sealed class BroadcastTests
         Assert.True(model.Profiles.CanManage);
         Assert.True(model.Audio.CanChoose);
         Assert.True(model.Broadcast.GoLiveCommand.CanExecute(null));
-        Assert.Equal("Error", window.FindControl<TextBlock>("BroadcastState")!.Text);
+        Assert.Equal("Error", window.Find<TextBlock>("BroadcastState")!.Text);
         window.Close();
     }
 
@@ -203,10 +203,10 @@ public sealed class BroadcastTests
         Assert.True(model.Audio.Levels.IsActive);
         Assert.False(model.Audio.CanChoose);
         Assert.False(model.Profiles.CanManage);
-        Assert.True(window.FindControl<Button>("RetryNowButton")!.IsVisible);
-        Assert.Matches(@"^Attempt [1-9][0-9]* in [0-9]+ seconds\.$", window.FindControl<TextBlock>("ReconnectCountdown")!.Text!);
+        Assert.True(window.Find<Button>("RetryNowButton")!.IsVisible);
+        Assert.Matches(@"^Attempt [1-9][0-9]* in [0-9]+ seconds\.$", window.Find<TextBlock>("ReconnectCountdown")!.Text!);
         window.UpdateLayout();
-        var stop = window.FindControl<Button>("StopBroadcastButton")!;
+        var stop = window.Find<Button>("StopBroadcastButton")!;
         var bottom = stop.TranslatePoint(new Point(0, stop.Bounds.Height), window);
         Assert.NotNull(bottom);
         Assert.InRange(bottom.Value.Y, 0, window.ClientSize.Height);
@@ -215,7 +215,7 @@ public sealed class BroadcastTests
         await model.Broadcast.RetryNowCommand.ExecuteAsync(null);
         await UntilAsync(() => model.Broadcast.State == BroadcastState.Live);
         Assert.Contains("Reconnects: 1", model.Broadcast.Diagnostics, StringComparison.Ordinal);
-        Assert.False(window.FindControl<Button>("RetryNowButton")!.IsEffectivelyVisible);
+        Assert.False(window.Find<Button>("RetryNowButton")!.IsEffectivelyVisible);
         encoder.Session.Fail();
         await UntilAsync(() => model.Broadcast.State == BroadcastState.Reconnecting);
         await model.Broadcast.StopCommand.ExecuteAsync(null);

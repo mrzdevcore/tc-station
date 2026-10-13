@@ -1,0 +1,128 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Tropicast.Station.App.ViewModels"
+             xmlns:c="using:Tropicast.Station.App.Controls"
+             xmlns:profiles="using:Tropicast.Station.Core.Profiles"
+             x:Class="Tropicast.Station.App.Views.Pages.ProfilesPage"
+             x:DataType="vm:MainViewModel">
+  <ScrollViewer>
+    <StackPanel Classes="page" DataContext="{Binding Profiles}" x:DataType="vm:ProfileEditorViewModel">
+      <TextBlock Classes="pageTitle" Text="Connection profiles" />
+      <TextBlock Classes="pageIntro" Text="Profiles connect to your own Icecast server. Tropicast stations need none." />
+
+      <c:SettingsCard>
+        <c:SettingRow Title="Profile" Description="Choose a saved profile to edit, or start a new one.">
+          <StackPanel Spacing="8">
+            <ComboBox Classes="field" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}"
+                      IsEnabled="{Binding CanManage}" HorizontalAlignment="Right" AutomationProperties.Name="Saved profile">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="profiles:ConnectionProfile"><TextBlock Text="{Binding Name}" /></DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+            <StackPanel Classes="actions" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+              <Button Command="{Binding EditCommand}" AutomationProperties.Name="Edit">
+                <StackPanel Orientation="Horizontal" Spacing="6"><c:LineIcon Data="{StaticResource Icon.Edit}" /><TextBlock Text="Edit" /></StackPanel>
+              </Button>
+              <Button Command="{Binding NewCommand}" AutomationProperties.Name="New">
+                <StackPanel Orientation="Horizontal" Spacing="6"><c:LineIcon Data="{StaticResource Icon.Plus}" /><TextBlock Text="New" /></StackPanel>
+              </Button>
+              <Button Command="{Binding DeleteCommand}" AutomationProperties.Name="Delete selected">
+                <StackPanel Orientation="Horizontal" Spacing="6"><c:LineIcon Data="{StaticResource Icon.Trash}" /><TextBlock Text="Delete" /></StackPanel>
+              </Button>
+            </StackPanel>
+          </StackPanel>
+        </c:SettingRow>
+      </c:SettingsCard>
+
+      <StackPanel IsEnabled="{Binding CanManage}" Spacing="8">
+        <TextBlock Classes="cardTitle" Text="Server" />
+        <c:SettingsCard>
+          <c:SettingRow Title="Profile name">
+            <TextBox Classes="field" Text="{Binding Name}" PlaceholderText="Profile name" AutomationProperties.Name="Profile name" />
+          </c:SettingRow>
+          <c:SettingRow Title="Host" Description="Hostname or IP address only.">
+            <TextBox Classes="field" Text="{Binding Host}" PlaceholderText="stream.example.com" AutomationProperties.Name="Host" />
+          </c:SettingRow>
+          <c:SettingRow Title="Port">
+            <TextBox Classes="field" Text="{Binding Port}" PlaceholderText="8000" AutomationProperties.Name="Port" />
+          </c:SettingRow>
+          <c:SettingRow Title="Mount">
+            <TextBox Classes="field" Text="{Binding Mount}" PlaceholderText="/live.mp3" AutomationProperties.Name="Mount" />
+          </c:SettingRow>
+          <c:SettingRow Title="Use TLS (HTTPS)" Description="{Binding TransportWarning}">
+            <ToggleSwitch IsChecked="{Binding UseTls}" OnContent="" OffContent="" AutomationProperties.Name="Use TLS (HTTPS)" />
+          </c:SettingRow>
+        </c:SettingsCard>
+
+        <TextBlock Classes="cardTitle" Text="Credentials" />
+        <c:SettingsCard>
+          <c:SettingRow Title="Source username">
+            <TextBox Classes="field" Text="{Binding Username}" PlaceholderText="source" AutomationProperties.Name="Source username" />
+          </c:SettingRow>
+          <c:SettingRow Title="Source password" Description="{Binding PasswordHint}">
+            <TextBox x:Name="PasswordInput" Classes="field" Text="{Binding Password}" PasswordChar="●" RevealPassword="False"
+                     PlaceholderText="Source password" AutomationProperties.Name="Source password" />
+          </c:SettingRow>
+        </c:SettingsCard>
+
+        <TextBlock Classes="cardTitle" Text="Encoder" />
+        <c:SettingsCard>
+          <c:SettingRow Title="Content type">
+            <ComboBox Classes="field" ItemsSource="{Binding ContentTypes}" SelectedItem="{Binding ContentType}"
+                      AutomationProperties.Name="Content type" />
+          </c:SettingRow>
+          <c:SettingRow Title="Bitrate (kbps)" Description="Saved with this profile.">
+            <ComboBox x:Name="ProfileBitrate" Classes="field" ItemsSource="{Binding Bitrates}" SelectedItem="{Binding BitrateKbps}"
+                      AutomationProperties.Name="Profile bitrate in kbps" />
+          </c:SettingRow>
+          <c:SettingRow Title="Sample rate (Hz)">
+            <ComboBox x:Name="ProfileSampleRate" Classes="field" ItemsSource="{Binding SampleRates}" SelectedItem="{Binding SampleRate}"
+                      AutomationProperties.Name="Profile sample rate in Hz" />
+          </c:SettingRow>
+          <c:SettingRow Title="Channels" Description="1 mono, 2 stereo.">
+            <ComboBox x:Name="ProfileChannels" Classes="field" ItemsSource="{Binding ChannelCounts}" SelectedItem="{Binding Channels}"
+                      AutomationProperties.Name="Profile channels: 1 mono, 2 stereo" />
+          </c:SettingRow>
+          <c:SettingRow Title="Also publish Ogg Opus" Description="A .opus mount next to the MP3 one, lighter for mobile listeners.">
+            <ToggleSwitch x:Name="PublishOpusInput" IsChecked="{Binding PublishOpus}" OnContent="" OffContent=""
+                          AutomationProperties.Name="Also publish Ogg Opus" />
+          </c:SettingRow>
+          <c:SettingRow Title="Opus bitrate (kbps)" IsVisible="{Binding PublishOpus}">
+            <ComboBox x:Name="ProfileOpusBitrate" Classes="field" ItemsSource="{Binding OpusBitrates}"
+                      SelectedItem="{Binding OpusBitrateKbps}" AutomationProperties.Name="Opus bitrate in kbps" />
+          </c:SettingRow>
+        </c:SettingsCard>
+
+        <TextBlock Classes="cardTitle" Text="Stream identification" />
+        <TextBlock Classes="muted" Text="Optional, visible to listeners." Margin="4,0" />
+        <c:SettingsCard>
+          <c:SettingRow Title="Stream name">
+            <TextBox x:Name="StreamNameInput" Classes="field" Text="{Binding StreamName}" MaxLength="128"
+                     PlaceholderText="Stream name" AutomationProperties.Name="Stream name" />
+          </c:SettingRow>
+          <c:SettingRow Title="Description">
+            <TextBox Classes="field" Text="{Binding StreamDescription}" MaxLength="512"
+                     PlaceholderText="Stream description" AutomationProperties.Name="Stream description" />
+          </c:SettingRow>
+          <c:SettingRow Title="Genre">
+            <TextBox Classes="field" Text="{Binding StreamGenre}" MaxLength="128" PlaceholderText="Genre"
+                     AutomationProperties.Name="Stream genre" />
+          </c:SettingRow>
+          <c:SettingRow Title="Website">
+            <TextBox Classes="field" Text="{Binding StreamUrl}" MaxLength="512" PlaceholderText="https://…"
+                     AutomationProperties.Name="Stream website URL" />
+          </c:SettingRow>
+        </c:SettingsCard>
+      </StackPanel>
+
+      <TextBlock Classes="muted" Text="{Binding ValidationMessage}" Margin="4,8,4,0" />
+      <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+        <Button Classes="accent" Content="Save profile" Command="{Binding SaveCommand}" />
+        <Button Content="Test connection" Command="{Binding TestCommand}" />
+        <Button Content="Cancel test" Command="{Binding TestCancelCommand}" />
+      </StackPanel>
+      <TextBlock Text="{Binding Status}" TextWrapping="Wrap" />
+      <TextBlock Classes="muted" Text="Test briefly connects as a source and releases the mount. It does not send audio." />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

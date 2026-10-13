@@ -4,7 +4,23 @@
              RequestedThemeVariant="Default">
   <!-- "Default" follows the system theme variant. -->
 
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="/Styles/Theme.axaml" />
+        <ResourceInclude Source="/Styles/Icons.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
   <Application.Styles>
-    <FluentTheme />
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <!-- Tropicast teal: white text on teal-700 (light) and dark text on teal-400 (dark) both pass WCAG AA. -->
+        <ColorPaletteResources x:Key="Light" Accent="#FF0F766E" />
+        <ColorPaletteResources x:Key="Dark" Accent="#FF2DD4BF" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="/Styles/Controls.axaml" />
   </Application.Styles>
 </Application>
