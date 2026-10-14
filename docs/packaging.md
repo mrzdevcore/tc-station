@@ -81,6 +81,16 @@ Export-Certificate -Cert (Get-PfxCertificate .\tropicast.pfx) -FilePath .\tropic
 .\scripts\install-windows-msix.ps1 -Package .\Tropicast-Station-0.1.0-win-x64.msix -Certificate .\tropicast.cer
 ```
 
+To trust the certificate without installing (for example before handing the MSIX to a customer),
+send the customer `tropicast.cer` and its thumbprint through separate channels; they run:
+
+```powershell
+.\scripts\trust-windows-certificate.ps1 -Certificate .\tropicast.cer -ExpectedThumbprint <thumbprint>
+```
+
+It asks for elevation, refuses a PFX, a non-code-signing or expired certificate, or a thumbprint
+mismatch, and adds the certificate to `LocalMachine\TrustedPeople` only. Undo with `-Remove`.
+
 Manual equivalent:
 
 ```powershell
