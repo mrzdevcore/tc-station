@@ -59,26 +59,38 @@ $OutputDir = (Resolve-Path -LiteralPath $OutputDir).Path
 $pfxPath = Join-Path $OutputDir 'tropicast.pfx'
 $cerPath = Join-Path $OutputDir 'tropicast.cer'
 
+# The script avoids .NET method calls where it can: Constrained Language Mode (AppLocker/WDAC
+# managed machines) only allows them on core types.
+
 function ConvertFrom-SecureStringPlain([Security.SecureString]$secure) {
+    if ($PSVersionTable.PSVersion.Major -ge 7) { return ConvertFrom-SecureString -SecureString $secure -AsPlainText }
+    # Windows PowerShell 5.1 fallback: needs Full Language mode.
     $ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
     try { [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr) }
     finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }
 }
 
+# Same output as [Convert]::ToBase64String, which Constrained Language Mode blocks.
+function ConvertTo-Base64([byte[]]$bytes) {
+    $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+    $chars = for ($i = 0; $i -lt $bytes.Length; $i += 3) {
+        $n = [int]$bytes[$i] -shl 16
+        if ($i + 1 -lt $bytes.Length) { $n = $n -bor ([int]$bytes[$i + 1] -shl 8) }
+        if ($i + 2 -lt $bytes.Length) { $n = $n -bor [int]$bytes[$i + 2] }
+        $alphabet[($n -shr 18) -band 63]
+        $alphabet[($n -shr 12) -band 63]
+        if ($i + 1 -lt $bytes.Length) { $alphabet[($n -shr 6) -band 63] } else { '=' }
+        if ($i + 2 -lt $bytes.Length) { $alphabet[$n -band 63] } else { '=' }
+    }
+    -join $chars
+}
+
 function Send-Secret([string]$name, [string]$value) {
     if ($Repo) {
         # gh reads the value from stdin when --body is absent, so it never appears in the process list.
-        # Write it raw: piping a string from PowerShell would append a newline to the secret.
-        $psi = New-Object Diagnostics.ProcessStartInfo
-        $psi.FileName = (Get-Command gh).Source
-        $psi.Arguments = "secret set $name --repo `"$Repo`""
-        $psi.UseShellExecute = $false
-        $psi.RedirectStandardInput = $true
-        $gh = [Diagnostics.Process]::Start($psi)
-        $gh.StandardInput.Write($value)
-        $gh.StandardInput.Close()
-        $gh.WaitForExit()
-        if ($gh.ExitCode -ne 0) { throw "gh secret set $name failed." }
+        # PowerShell appends a newline to piped strings; gh trims trailing CR/LF from stdin.
+        $value | & gh secret set $name --repo $Repo | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "gh secret set $name failed." }
         Write-Output "Set $name in $Repo."
     } else {
         Set-Clipboard -Value $value
@@ -95,33 +107,44 @@ $cert = New-SelfSignedCertificate -Type Custom -Subject $Subject `
     -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}')
 Write-Output "Created $($cert.Subject) [$($cert.Thumbprint)], valid until $($cert.NotAfter.ToString('yyyy-MM-dd'))."
 
-# 2. Password and PFX.
-$generatedPassword = -not $Password
-if ($generatedPassword) {
-    $bytes = New-Object byte[] 32
-    $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
-    try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
-    $Password = ConvertTo-SecureString -String ([Convert]::ToBase64String($bytes)) -AsPlainText -Force
-    [Array]::Clear($bytes, 0, $bytes.Length)
-}
-Export-PfxCertificate -Cert $cert -FilePath $pfxPath -Password $Password | Out-Null
-Export-Certificate -Cert $cert -FilePath $cerPath | Out-Null
-
+# A failed run must not leave a half-delivered certificate behind: a re-run would create a second
+# one with the same subject.
+$completed = $false
 $pfxBase64 = $null
 $plainPassword = $null
 try {
+    # 2. Password and PFX.
+    $generatedPassword = -not $Password
+    if ($generatedPassword) {
+        $bytes = New-Object byte[] 32
+        $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+        try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
+        $Password = ConvertTo-SecureString -String ([Convert]::ToBase64String($bytes)) -AsPlainText -Force
+        [Array]::Clear($bytes, 0, $bytes.Length)
+    }
+    Export-PfxCertificate -Cert $cert -FilePath $pfxPath -Password $Password | Out-Null
+    Export-Certificate -Cert $cert -FilePath $cerPath | Out-Null
+
     # 3. Secrets. The publisher is read back from the certificate so it matches exactly.
-    $pfxBase64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($pfxPath))
+    $pfxBytes = if ($PSVersionTable.PSVersion.Major -ge 6) { Get-Content -LiteralPath $pfxPath -AsByteStream -Raw }
+                else { Get-Content -LiteralPath $pfxPath -Encoding Byte -Raw }
+    $pfxBase64 = ConvertTo-Base64 $pfxBytes
     $plainPassword = ConvertFrom-SecureStringPlain $Password
     Send-Secret 'WINDOWS_PFX_BASE64' $pfxBase64
     Send-Secret 'WINDOWS_PFX_PASSWORD' $plainPassword
     Send-Secret 'WINDOWS_MSIX_PUBLISHER' $cert.Subject
+    $completed = $true
 } finally {
     $pfxBase64 = $null
     $plainPassword = $null
-    [GC]::Collect()
-    # 5. The PFX holds the private key: keep it only on request.
-    if (-not $KeepPfx -and (Test-Path -LiteralPath $pfxPath)) { Remove-Item -LiteralPath $pfxPath -Force }
+    # 5. The PFX holds the private key: keep it only on request, and never after a failure.
+    if ((-not $KeepPfx -or -not $completed) -and (Test-Path -LiteralPath $pfxPath)) { Remove-Item -LiteralPath $pfxPath -Force }
+    if (-not $completed) {
+        Write-Warning "Run failed: removing certificate $($cert.Thumbprint), its private key and $cerPath."
+        Remove-Item -LiteralPath "Cert:\CurrentUser\My\$($cert.Thumbprint)" -DeleteKey -ErrorAction Continue
+        if (Test-Path -LiteralPath $cerPath) { Remove-Item -LiteralPath $cerPath -Force }
+        Write-Warning 'GitHub secrets already set by this run point to the removed certificate. Re-run the script to replace them.'
+    }
 }
 
 # 4. What to give customers.
