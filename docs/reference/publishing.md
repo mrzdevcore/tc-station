@@ -1,0 +1,17 @@
+# FFmpeg / Icecast publishing
+
+`IBroadcastEncoder.StartAsync` accepts resolved `BroadcastTarget` + optional `EncoderOptions` (float32, mono/stereo, 44.1/48 kHz, 64/96/128/192/320 kbps). Without override uses saved profile's settings; new profiles default **44.1 kHz stereo/128 kbps**. Profile must use **audio/mpeg** or **audio/ogg** (Opus, see [Connection profiles](broadcasting.md#connection-profiles)). Returns `IEncoderSession`; hand normalized `AudioCaptureService.FrameAvailable` frames to `Submit`, observe `Completion` and `Snapshot`, then stop/dispose session. `Submit` copies PCM, never blocks capture callback. Invalid format, non-finite samples, 256-packet capacity or 2 s byte-budget overrun explicitly fail stream. One publisher per encoder service. Go Live controller connects these services to UI; starting preview does **not** broadcast.
+
+FFmpeg reads raw float32 on stdin, writes MP3 on stdout. Managed publisher shares authenticated PUT/`Expect: 100-continue` handshake with **Test connection**, then sends encoded audio directly to Icecast. Passwords never in FFmpeg args, env, URLs, temp files or stderr. Auth failure, occupied mount, denied publishing have specific statuses. Icecast 2.5's 409 and Icecast 2.4's 403 with fixed `Mountpoint in use` plaintext reason both recognized without logging response text; 2.4's `100 Continue` then `200 OK` keeps stream active. Disconnect, invalid responses, TLS cert failures, pipe errors, 10 s network-write stalls = explicit failures. No redirects or cert bypasses. FFmpeg stderr drained/classified without retaining native text. State becomes **Streaming** only after encoded bytes sent (not proof listener received them).
+
+Stop completes PCM queue + closes stdin, letting FFmpeg flush MP3. Shutdown >5 s → owned process tree killed + reaped. DI host dispose stops active session even if caller forgot. Child owns no server connection: if parent exits abruptly, redirected stdin/stdout/stderr pipes close; EOF/broken pipes make FFmpeg exit, no lingering connected source. Publisher disconnects with parent's socket. Graceful exit + failures observe all pipe tasks before disposing native streams.
+
+App loads only `ffmpeg/ffmpeg` (`ffmpeg.exe` on Windows) relative to app dir, never arbitrary PATH executable. Build/publish copies RID-specific bundle, **including corresponding sources and full licenses**. Minimal build includes LAME, Opus + TLS (OpenSSL on Linux, Schannel on Windows, Secure Transport on macOS), no GPL-only/nonfree features. See [`THIRD_PARTY_NOTICES`](../../THIRD_PARTY_NOTICES) for versions, hashes, licensing, redistribution obligations. Users can replace/rebuild this separate executable; commercial distribution still needs packaging/license review.
+
+After building bundle, `dotnet test tests/Tropicast.Station.Encoding.Tests` exercises real encoding, decode, auth/mount status mapping, queue errors, network disconnect, graceful/forced process cleanup, owner dispose. Without bundle, native codec tests explicitly skip; CI requires one. For real listener POC, run local Icecast with source password `tc-test-source` and set its port:
+
+```bash
+TC_TEST_ICECAST_PORT=18000 dotnet test tests/Tropicast.Station.Encoding.Tests -c Release
+```
+
+POC sends generated 600 Hz tone to unique mount, checks listener HTTP success + `audio/mpeg`, captures >4 s MP3, decodes with bundled FFmpeg, verifies stop. No mic recorded. Linux CI runs this against isolated localhost Icecast plus PulseAudio/keyring tests; all three OS jobs build + exercise native FFmpeg.
