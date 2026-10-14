@@ -200,6 +200,8 @@ public sealed class AccountServiceTests
         Assert.Equal(64, profile.OpusBitrateKbps);
         Assert.Equal("Radio Mada", profile.StreamName);
         Assert.Equal(["/stations/k3m9x2p7qa/live.mp3", "/stations/k3m9x2p7qa/live.opus"], profile.Outputs().Select(o => o.Mount));
+        // Tropicast ingest runs Icecast 2.5 behind a proxy: both outputs send a chunked body.
+        Assert.All(profile.Outputs(), o => Assert.True(o.ChunkedBody));
         Assert.Equal("station-password-1", target.Password);
         Assert.DoesNotContain("station-password", target.ToString(), StringComparison.Ordinal);
 
@@ -216,7 +218,10 @@ public sealed class AccountServiceTests
         var provider = new AccountBroadcastTargetProvider(account,
             new Broadcasting.ManualBroadcastTargetProvider(new MemoryProfiles { Items = [profile] }, _secrets));
 
-        Assert.Equal("manual-password", (await provider.GetAsync(profile.Id, Token)).Password);
+        var target = await provider.GetAsync(profile.Id, Token);
+        Assert.Equal("manual-password", target.Password);
+        // Self-hosted Icecast may be 2.4, which does not decode chunked bodies.
+        Assert.False(target.Profile.ChunkedBody);
         Assert.Null(await provider.RenewAsync(profile.Id, Token));
     }
 }

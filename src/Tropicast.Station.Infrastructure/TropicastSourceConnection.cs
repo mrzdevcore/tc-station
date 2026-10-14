@@ -19,15 +19,17 @@ public sealed class TropicastSourceConnection : IAsyncDisposable
     private readonly TcpClient _client;
     private readonly Stream _stream;
     private readonly bool _expectFinalResponse;
+    private readonly ChunkedWriteStream? _chunked;
 
-    private TropicastSourceConnection(TcpClient client, Stream stream, bool expectFinalResponse)
+    private TropicastSourceConnection(TcpClient client, Stream stream, bool expectFinalResponse, bool chunked)
     {
         _client = client;
         _stream = stream;
         _expectFinalResponse = expectFinalResponse;
+        _chunked = chunked ? new ChunkedWriteStream(stream) : null;
     }
 
-    public Stream AudioStream => _stream;
+    public Stream AudioStream => _chunked ?? _stream;
 
     public static async Task<TropicastSourceConnection> ConnectAsync(BroadcastTarget target, CancellationToken cancellationToken = default)
     {
@@ -60,6 +62,8 @@ public sealed class TropicastSourceConnection : IAsyncDisposable
             var request = $"PUT {target.Profile.Mount} HTTP/1.1\r\nHost: {target.Profile.Endpoint.Authority}\r\n"
                 + $"Authorization: Basic {credentials}\r\nContent-Type: {target.Profile.ContentType}\r\n"
                 + StreamHeaders(target.Profile)
+                // Without a length or chunked encoding, an HTTP proxy forwards no body (tc-station#63).
+                + (target.Profile.ChunkedBody ? "Transfer-Encoding: chunked\r\n" : "")
                 + "Expect: 100-continue\r\nIce-Public: 0\r\nConnection: close\r\n\r\n";
             await stream.WriteAsync(Encoding.UTF8.GetBytes(request), deadline.Token).ConfigureAwait(false);
             var response = await ReadResponseAsync(stream, deadline.Token).ConfigureAwait(false);
@@ -68,7 +72,7 @@ public sealed class TropicastSourceConnection : IAsyncDisposable
                 throw Rejected(response);
             }
             accepted = true;
-            return new(client, stream, response.Code == 100);
+            return new(client, stream, response.Code == 100, target.Profile.ChunkedBody);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
@@ -196,6 +200,20 @@ public sealed class TropicastSourceConnection : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (_chunked is not null)
+        {
+            // End the chunked body so the server closes the source cleanly. Best effort: the connection may
+            // already be gone, and closing it ends the source anyway.
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            try
+            {
+                await _chunked.CompleteAsync(timeout.Token).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is IOException or ObjectDisposedException or OperationCanceledException)
+            {
+                // Closing below still ends the source.
+            }
+        }
         await _stream.DisposeAsync().ConfigureAwait(false);
         _client.Dispose();
     }
