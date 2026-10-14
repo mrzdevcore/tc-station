@@ -32,9 +32,11 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-$identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-$isAdmin = ([Security.Principal.WindowsPrincipal]$identity).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-if (-not $isAdmin) {
+# Cmdlets and the Cert: drive only: Constrained Language Mode (AppLocker/WDAC managed machines)
+# blocks .NET method calls such as X509Store.Add.
+
+# S-1-16-12288 is the High Mandatory Level group: present only in an elevated process.
+if (-not ((whoami /groups) -match 'S-1-16-12288')) {
     throw 'Run this script from an elevated (Run as administrator) PowerShell: it writes to LocalMachine\TrustedPeople.'
 }
 
@@ -43,7 +45,8 @@ $Package = (Resolve-Path -LiteralPath $Package).Path
 
 if ($Certificate) {
     if (-not (Test-Path -LiteralPath $Certificate)) { throw "Certificate not found: $Certificate" }
-    $cert = New-Object Security.Cryptography.X509Certificates.X509Certificate2 (Resolve-Path -LiteralPath $Certificate).Path
+    $Certificate = (Resolve-Path -LiteralPath $Certificate).Path
+    $cert = Get-PfxCertificate -FilePath $Certificate
 } else {
     $signature = Get-AuthenticodeSignature -FilePath $Package
     if (-not $signature.SignerCertificate) {
@@ -53,24 +56,30 @@ if ($Certificate) {
 }
 Write-Output "Certificate: $($cert.Subject) [$($cert.Thumbprint)]"
 
-$store = New-Object Security.Cryptography.X509Certificates.X509Store 'TrustedPeople', 'LocalMachine'
-$store.Open([Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
-try {
-    if ($Remove) {
-        $app = Get-AppxPackage Tropicast.Station
-        if ($app) { Remove-AppxPackage $app.PackageFullName; Write-Output 'Removed Tropicast Station.' }
-        $store.Remove($cert)
-        Write-Output 'Removed the certificate from LocalMachine\TrustedPeople.'
-        return
+$trustedPath = "Cert:\LocalMachine\TrustedPeople\$($cert.Thumbprint)"
+if ($Remove) {
+    $app = Get-AppxPackage Tropicast.Station
+    if ($app) { Remove-AppxPackage $app.PackageFullName; Write-Output 'Removed Tropicast Station.' }
+    if (Test-Path -LiteralPath $trustedPath) { Remove-Item -LiteralPath $trustedPath }
+    Write-Output 'Removed the certificate from LocalMachine\TrustedPeople.'
+    return
+}
+if (Test-Path -LiteralPath $trustedPath) {
+    Write-Output 'The certificate is already trusted.'
+} else {
+    # Import-Certificate reads a file: write the signer certificate to a temporary .cer if needed.
+    $cerFile = $Certificate
+    if (-not $cerFile) {
+        $cerFile = Join-Path $env:TEMP "tropicast-$((New-Guid).Guid).cer"
+        if ($PSVersionTable.PSVersion.Major -ge 6) { Set-Content -LiteralPath $cerFile -Value $cert.RawData -AsByteStream }
+        else { Set-Content -LiteralPath $cerFile -Value $cert.RawData -Encoding Byte }
     }
-    if ($store.Certificates.Find('FindByThumbprint', $cert.Thumbprint, $false).Count -eq 0) {
-        $store.Add($cert)
-        Write-Output 'Added the certificate to LocalMachine\TrustedPeople.'
-    } else {
-        Write-Output 'The certificate is already trusted.'
+    try {
+        Import-Certificate -FilePath $cerFile -CertStoreLocation Cert:\LocalMachine\TrustedPeople | Out-Null
+    } finally {
+        if (-not $Certificate) { Remove-Item -LiteralPath $cerFile -Force }
     }
-} finally {
-    $store.Close()
+    Write-Output 'Added the certificate to LocalMachine\TrustedPeople.'
 }
 
 Add-AppxPackage -Path $Package
