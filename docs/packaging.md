@@ -29,13 +29,13 @@ Every package needs the FFmpeg bundle first (`scripts/build-ffmpeg.sh <rid>`, ou
 ## Building locally
 
 ```bash
-bash scripts/build-ffmpeg.sh linux-x64 && TC_VERSION=0.2.0 bash scripts/package-linux.sh
-bash scripts/build-ffmpeg.sh osx-arm64 && TC_VERSION=0.2.0 bash scripts/package-macos.sh osx-arm64   # on macOS
+bash scripts/build-ffmpeg.sh linux-x64 && bash scripts/package-linux.sh
+bash scripts/build-ffmpeg.sh osx-arm64 && bash scripts/package-macos.sh osx-arm64   # on macOS
 ```
 
 ```powershell
 bash scripts/build-ffmpeg.sh win-x64   # from an MSYS2 MINGW64 shell
-./scripts/package-windows.ps1 -Version 0.2.0 -TestSign   # throw-away certificate for local install tests
+./scripts/package-windows.ps1 -TestSign   # throw-away certificate for local install tests
 ```
 
 Without signing configuration the packages are still produced, but:
@@ -62,14 +62,14 @@ store (`CurrentUser\My`) is not enough; the certificate must be in `LocalMachine
 store `WINDOWS_PFX_BASE64`, `WINDOWS_PFX_PASSWORD` and `WINDOWS_MSIX_PUBLISHER` as secrets. The
 publisher must equal the certificate subject exactly (for example `CN=Tropicast`).
 
-**2. Release.** Push a tag such as `v0.2.0-rc.1` (commit on `main`). When the workflow ends, download
+**2. Release.** Push a tag such as `v1.2.3-rc.1` (commit on `main`). When the workflow ends, download
 `Tropicast-Station-<version>-win-x64.msix` from the draft release. The build prints a warning that
 the chain is not trusted; that is expected.
 
 **3. Install on the test machine.** Open PowerShell **as administrator** and run:
 
 ```powershell
-.\scripts\install-windows-msix.ps1 -Package .\Tropicast-Station-0.2.0-win-x64.msix
+.\scripts\install-windows-msix.ps1 -Package .\Tropicast-Station-<version>-win-x64.msix
 ```
 
 The script reads the certificate from the MSIX signature, adds it to `LocalMachine\TrustedPeople`
@@ -78,7 +78,7 @@ it:
 
 ```powershell
 Export-Certificate -Cert (Get-PfxCertificate .\tropicast.pfx) -FilePath .\tropicast.cer
-.\scripts\install-windows-msix.ps1 -Package .\Tropicast-Station-0.2.0-win-x64.msix -Certificate .\tropicast.cer
+.\scripts\install-windows-msix.ps1 -Package .\Tropicast-Station-<version>-win-x64.msix -Certificate .\tropicast.cer
 ```
 
 To trust the certificate without installing (for example before handing the MSIX to a customer),
@@ -95,13 +95,13 @@ Manual equivalent:
 
 ```powershell
 Import-Certificate -FilePath .\tropicast.cer -CertStoreLocation Cert:\LocalMachine\TrustedPeople
-Add-AppxPackage .\Tropicast-Station-0.2.0-win-x64.msix
+Add-AppxPackage .\Tropicast-Station-<version>-win-x64.msix
 ```
 
 **4. Uninstall and untrust.**
 
 ```powershell
-.\scripts\install-windows-msix.ps1 -Package .\Tropicast-Station-0.2.0-win-x64.msix -Remove
+.\scripts\install-windows-msix.ps1 -Package .\Tropicast-Station-<version>-win-x64.msix -Remove
 ```
 
 **Troubleshooting.**
@@ -138,7 +138,10 @@ confirm the signing state before publishing.
 git tag v0.2.0 && git push origin v0.2.0
 ```
 
-MSIX versions are `major.minor.patch.0`; the pre-release suffix only appears in the release title.
+The tag is the only place the version is set: the workflow passes it to every package and to the
+app (`-p:Version`). The `0.0.0` in `Directory.Build.props`, `Info.plist` and the packaging scripts is
+a development placeholder; local and CI builds report it. MSIX versions are `major.minor.patch.0`;
+the pre-release suffix only appears in the release title.
 
 ## Code-signing secrets
 

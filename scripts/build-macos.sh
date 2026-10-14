@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds "Tropicast Station.app" for osx-arm64 or osx-x64.
-# TC_VERSION            marketing/build version (default 0.2.0)
+# TC_VERSION            marketing/build version (default 0.0.0)
 # TC_CODESIGN_IDENTITY  "Developer ID Application: ..." identity; default "-" (ad-hoc, local/CI only)
 set -euo pipefail
 
@@ -15,7 +15,7 @@ case "$rid" in
   osx-arm64|osx-x64) ;;
   *) echo "Expected osx-arm64 or osx-x64." >&2; exit 1 ;;
 esac
-version="${TC_VERSION:-0.2.0}"
+version="${TC_VERSION:-0.0.0}"
 identity="${TC_CODESIGN_IDENTITY:--}"
 output="$root/artifacts/$rid"
 bundle="$output/Tropicast Station.app"
