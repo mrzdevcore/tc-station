@@ -13,13 +13,13 @@
   with -Remove.
 
 .EXAMPLE
-  .\install-windows-msix.ps1 -Package .\Tropicast-Station-0.1.0-win-x64.msix
+  .\install-windows-msix.ps1 -Package .\Tropicast-Station-0.2.0-win-x64.msix
 
 .EXAMPLE
-  .\install-windows-msix.ps1 -Package .\Tropicast-Station-0.1.0-win-x64.msix -Certificate .\tropicast.cer
+  .\install-windows-msix.ps1 -Package .\Tropicast-Station-0.2.0-win-x64.msix -Certificate .\tropicast.cer
 
 .EXAMPLE
-  .\install-windows-msix.ps1 -Package .\Tropicast-Station-0.1.0-win-x64.msix -Remove
+  .\install-windows-msix.ps1 -Package .\Tropicast-Station-0.2.0-win-x64.msix -Remove
 #>
 [CmdletBinding()]
 param(

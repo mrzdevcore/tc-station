@@ -7,7 +7,7 @@
 #   -TestSign                                      sign with a throw-away self-signed cert (CI install test only)
 [CmdletBinding()]
 param(
-    [string]$Version = '0.1.0',
+    [string]$Version = '0.2.0',
     [switch]$TestSign
 )
 $ErrorActionPreference = 'Stop'

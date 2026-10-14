@@ -107,7 +107,7 @@ gh secret list --repo tropicast/tc-station
 
 ## Checking it worked
 
-Push a pre-release tag such as `v0.1.0-rc1` from `main`; the draft release's logs should no longer
+Push a pre-release tag such as `v0.2.0-rc.1` from `main`; the draft release's logs should no longer
 show "unsigned"/"ad-hoc" warnings. Then verify on a clean machine:
 `Get-AuthenticodeSignature` (Windows) and `spctl -a -vv -t install Tropicast.dmg` plus
 `xcrun stapler validate` (macOS). These clean-machine checks have not been performed yet.

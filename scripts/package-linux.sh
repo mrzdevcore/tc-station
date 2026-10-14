@@ -4,7 +4,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-version="${TC_VERSION:-0.1.0}"
+version="${TC_VERSION:-0.2.0}"
 rid=linux-x64
 work="$root/artifacts/package/linux-x64"
 appdir="$work/Tropicast-Station.AppDir"

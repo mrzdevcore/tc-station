@@ -8,7 +8,7 @@ public sealed class AppInfoTests
         var info = new AppInfo(typeof(AppInfo).Assembly);
 
         Assert.Equal("Tropicast Station", info.ProductName);
-        Assert.Equal("0.1.0", info.Version);
+        Assert.Equal("0.2.0", info.Version);
     }
 
     [Fact]

@@ -153,7 +153,7 @@ jobs:
             test -x "$bundle/Contents/MacOS/Tropicast.Station"
             test -x "$bundle/Contents/MacOS/ffmpeg/ffmpeg"
             test -f "$bundle/Contents/Resources/tropicast.icns"
-            image="artifacts/package/Tropicast-Station-0.1.0-$rid.dmg"
+            image="artifacts/package/Tropicast-Station-0.2.0-$rid.dmg"
             mount="$RUNNER_TEMP/tc-dmg-$rid"
             mkdir -p "$mount"
             hdiutil attach "$image" -mountpoint "$mount" -nobrowse -readonly
@@ -167,9 +167,9 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          ./scripts/package-windows.ps1 -Version 0.1.0 -TestSign
+          ./scripts/package-windows.ps1 -Version 0.2.0 -TestSign
           Import-Certificate -FilePath artifacts/package/tropicast-test-signing.cer -CertStoreLocation Cert:\LocalMachine\TrustedPeople | Out-Null
-          Add-AppxPackage artifacts/package/Tropicast-Station-0.1.0-win-x64.msix
+          Add-AppxPackage artifacts/package/Tropicast-Station-0.2.0-win-x64.msix
           $pkg = Get-AppxPackage Tropicast.Station
           if (-not $pkg) { throw 'The MSIX did not install.' }
           foreach ($file in 'Tropicast.Station.exe', 'ffmpeg\ffmpeg.exe', 'ffmpeg\THIRD_PARTY_NOTICES', 'THIRD_PARTY_NOTICES') {
@@ -196,12 +196,12 @@ jobs:
           $env:TC_WINDOWS_PFX_PATH = $pfx
           $env:TC_WINDOWS_PFX_PASSWORD = 'tc-ci-pfx'
           $env:TC_MSIX_PUBLISHER = 'CN=Tropicast'
-          pwsh -NoProfile -File ./scripts/package-windows.ps1 -Version 0.1.0
+          pwsh -NoProfile -File ./scripts/package-windows.ps1 -Version 0.2.0
           if ($LASTEXITCODE -ne 0) { throw "Untrusted PFX build exited with $LASTEXITCODE." }
-          if (-not (Test-Path artifacts/package/Tropicast-Station-0.1.0-win-x64.msix)) { throw 'The MSIX was not produced.' }
+          if (-not (Test-Path artifacts/package/Tropicast-Station-0.2.0-win-x64.msix)) { throw 'The MSIX was not produced.' }
           $env:TC_REQUIRE_TRUSTED_CHAIN = '1'
           $strictFailed = $false
-          pwsh -NoProfile -File ./scripts/package-windows.ps1 -Version 0.1.0
+          pwsh -NoProfile -File ./scripts/package-windows.ps1 -Version 0.2.0
           if ($LASTEXITCODE -ne 0) { $strictFailed = $true }
           if (-not $strictFailed) { throw 'TC_REQUIRE_TRUSTED_CHAIN=1 must reject an untrusted certificate.' }
           Remove-Item $pfx -Force
@@ -212,7 +212,7 @@ jobs:
         run: |
           sudo apt-get install -y -qq xvfb xauth desktop-file-utils
           bash scripts/package-linux.sh
-          image="$PWD/artifacts/package/Tropicast-Station-0.1.0-x86_64.AppImage"
+          image="$PWD/artifacts/package/Tropicast-Station-0.2.0-x86_64.AppImage"
           xvfb-run -a "$image" --appimage-extract-and-run > "$RUNNER_TEMP/tc-appimage.log" 2>&1 &
           for attempt in {1..30}; do
             if pgrep -f 'usr/bin/Tropicast.Station$' > /dev/null; then break; fi
