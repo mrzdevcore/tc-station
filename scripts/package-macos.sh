@@ -12,7 +12,7 @@ fi
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 rid="${1:-osx-arm64}"
-version="${TC_VERSION:-0.1.0}"
+version="${TC_VERSION:-0.0.0}"
 identity="${TC_CODESIGN_IDENTITY:--}"
 notarize=false
 if [[ "$identity" != "-" && -n "${TC_NOTARY_APPLE_ID:-}" && -n "${TC_NOTARY_TEAM_ID:-}" && -n "${TC_NOTARY_PASSWORD:-}" ]]; then

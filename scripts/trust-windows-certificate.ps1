@@ -17,7 +17,7 @@
   .\trust-windows-certificate.ps1 -Certificate .\tropicast.cer -ExpectedThumbprint 0123456789ABCDEF0123456789ABCDEF01234567
 
 .EXAMPLE
-  .\trust-windows-certificate.ps1 -Package .\Tropicast-Station-0.1.0-win-x64.msix
+  .\trust-windows-certificate.ps1 -Package .\Tropicast-Station-<version>-win-x64.msix
 
 .EXAMPLE
   .\trust-windows-certificate.ps1 -Certificate .\tropicast.cer -Remove

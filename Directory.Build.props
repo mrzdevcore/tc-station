@@ -12,6 +12,7 @@
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <Company>Tropicast</Company>
     <Product>Tropicast Station</Product>
-    <Version>0.1.0</Version>
+    <!-- Development placeholder. Release builds take the version from the git tag (release.yml). -->
+    <Version>0.0.0</Version>
   </PropertyGroup>
 </Project>
