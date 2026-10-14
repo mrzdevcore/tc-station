@@ -51,6 +51,12 @@ Users only get a clean install if the certificate chains to a trusted root.
    # e.g. CN=Tropicast, O=Tropicast, C=FR
    ```
 
+**Automated (self-signed).** `scripts/new-windows-signing-cert.ps1` runs steps 1–3: it generates a
+random PFX password, sets the three secrets with `gh` (`-Repo tropicast/tc-station`) or hands them to
+you one at a time through the clipboard, never prints them, deletes the local PFX (unless `-KeepPfx`)
+and writes `tropicast.cer` plus its thumbprint for customers. Windows clipboard history (Win+V) can
+keep copies; turn it off or clear it when you use the clipboard mode.
+
 A self-signed PFX is accepted by the release build, which only warns that the chain is untrusted.
 Anyone installing that MSIX must first trust the certificate; see
 [Installing a self-signed MSIX](packaging.md#installing-a-self-signed-msix-windows).
