@@ -50,7 +50,7 @@ public sealed class AccountBroadcastTargetProvider(AccountService account, Manua
             target.Username, UseTls: url.Scheme == Uri.UriSchemeHttps, ContentType: primary.ContentType,
             BitrateKbps: Math.Min(isOpus ? OpusBitrateKbps : Mp3BitrateKbps, target.MaxBitrateKbps),
             SampleRate: isOpus ? 48000 : 44100, StreamName: Truncate(target.StationName),
-            OpusBitrateKbps: Math.Min(OpusBitrateKbps, target.MaxBitrateKbps));
+            OpusBitrateKbps: Math.Min(OpusBitrateKbps, target.MaxBitrateKbps)) { ChunkedBody = true };
         // Opus rides along only on the same ingest host, at the mount the encoder derives from the MP3 one.
         return mp3 is not null && opus is not null && opus.IngestUrl.Authority == url.Authority
             && opus.IngestUrl.AbsolutePath == profile.OpusMount

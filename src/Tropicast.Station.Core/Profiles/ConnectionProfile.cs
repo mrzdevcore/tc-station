@@ -15,6 +15,14 @@ public sealed record ConnectionProfile(
     [JsonIgnore]
     public Uri Endpoint => new UriBuilder(UseTls ? "https" : "http", Host, Port, Mount).Uri;
 
+    /// <summary>
+    /// Send the source body with <c>Transfer-Encoding: chunked</c>, so it survives HTTP proxies. Only for servers
+    /// known to decode it (Tropicast stations, Icecast 2.5+): Icecast 2.4 would pass the chunk framing to listeners.
+    /// Manual profiles keep the classic endless body.
+    /// </summary>
+    [JsonIgnore]
+    public bool ChunkedBody { get; init; }
+
     /// <summary>Ogg Opus mount published next to an MP3 mount: <c>/x/live.mp3</c> becomes <c>/x/live.opus</c>.</summary>
     [JsonIgnore]
     public string OpusMount => Mount.EndsWith(".mp3", StringComparison.Ordinal) ? Mount[..^4] + ".opus" : "";

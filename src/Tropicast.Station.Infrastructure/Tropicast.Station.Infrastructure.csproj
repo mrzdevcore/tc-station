@@ -4,4 +4,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Tropicast.Station.Infrastructure.Tests" />
+  </ItemGroup>
 </Project>
