@@ -77,6 +77,7 @@ internal sealed class NAudioWasapiBackend : IWasapiBackend
         ObjectDisposedException.ThrowIf(_disposed, this);
         var device = _enumerator.GetDevice(deviceId);
         WasapiRecorder? recorder = null;
+        WasapiPlayer? keepAlive = null;
         try
         {
             if (device.State != DeviceState.Active)
@@ -85,9 +86,11 @@ internal sealed class NAudioWasapiBackend : IWasapiBackend
             }
 
             AudioFormat format;
+            WaveFormat mixFormat;
             using (var client = device.CreateAudioClient())
             {
-                format = WasapiFormats.Negotiate(client.MixFormat);
+                mixFormat = client.MixFormat;
+                format = WasapiFormats.Negotiate(mixFormat);
             }
             // Shared mode at the mix rate and channel count, 100 ms buffers and polling, as with NAudio 2's WasapiCapture;
             // the engine converts PCM24/32 to the requested float32 (or keeps PCM16).
@@ -102,13 +105,19 @@ internal sealed class NAudioWasapiBackend : IWasapiBackend
             if (device.DataFlow == DataFlow.Render)
             {
                 builder.WithLoopbackCapture();
+                // Loopback delivers no packets while nothing plays on the endpoint, so the encoder would
+                // get no audio and the server would drop the idle source. Rendering silence keeps the
+                // engine running: the mix is unchanged and loopback reports silent packets instead.
+                keepAlive = new WasapiPlayerBuilder().WithDevice(device).WithSharedMode().Build();
+                keepAlive.Init(new SilenceProvider(mixFormat));
             }
             recorder = builder.Build();
-            return new NAudioSource(device, recorder, format);
+            return new NAudioSource(device, recorder, keepAlive, format);
         }
         catch
         {
             recorder?.Dispose();
+            keepAlive?.Dispose();
             device.Dispose();
             throw;
         }
@@ -137,14 +146,17 @@ internal sealed class NAudioWasapiBackend : IWasapiBackend
     {
         private readonly MMDevice _device;
         private readonly WasapiRecorder _recorder;
+        // Loopback only: silent render stream that keeps loopback packets flowing.
+        private readonly WasapiPlayer? _keepAlive;
         // The recorder's span is only valid during its callback: copy it into a reused buffer for the session.
         private byte[] _buffer = [];
         private bool _disposed;
 
-        internal NAudioSource(MMDevice device, WasapiRecorder recorder, AudioFormat format)
+        internal NAudioSource(MMDevice device, WasapiRecorder recorder, WasapiPlayer? keepAlive, AudioFormat format)
         {
             _device = device;
             _recorder = recorder;
+            _keepAlive = keepAlive;
             Format = format;
             recorder.DataAvailable += OnData;
             recorder.RecordingStopped += OnStopped;
@@ -153,7 +165,14 @@ internal sealed class NAudioWasapiBackend : IWasapiBackend
         public AudioFormat Format { get; }
         public event EventHandler<WasapiDataEventArgs>? DataAvailable;
         public event EventHandler<WasapiStoppedEventArgs>? Stopped;
-        public void Start() => _recorder.StartRecording();
+
+        public void Start()
+        {
+            _keepAlive?.Play();
+            _recorder.StartRecording();
+        }
+
+        // Stop may run on the capture callback: leave the silent stream to Dispose, which runs off it.
         public void Stop() => _recorder.StopRecording();
 
         private void OnData(ReadOnlySpan<byte> data, AudioClientBufferFlags flags, long devicePosition, long qpcPosition)
@@ -176,6 +195,7 @@ internal sealed class NAudioWasapiBackend : IWasapiBackend
                 }
                 finally
                 {
+                    _keepAlive?.Dispose();
                     _device.Dispose();
                     _disposed = true;
                 }

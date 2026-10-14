@@ -20,6 +20,8 @@ internal sealed class FfmpegExecutable
         {
             UseShellExecute = false, RedirectStandardInput = true,
             RedirectStandardOutput = true, RedirectStandardError = true,
+            // ffmpeg.exe is a console program: without this, Windows opens an empty console per encoder.
+            CreateNoWindow = true,
         };
         foreach (var argument in Arguments(options))
         {
