@@ -14,12 +14,37 @@ public sealed partial class ConsentViewModel(GeneralSettingsViewModel settings, 
 {
     private readonly TaskCompletionSource _accepted = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private string? _licenses;
+    private bool _updatePending;
 
     /// <summary>The version the user is asked to accept: the bundled one, or a newer one the account reported.</summary>
     [ObservableProperty, NotifyPropertyChangedFor(nameof(VersionText))] public partial string Version { get; private set; } = LegalTerms.Version;
 
     /// <summary>The screen covers the window.</summary>
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsBlocking))] public partial bool IsShown { get; private set; }
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsBlocking), nameof(IsShellEnabled))] public partial bool IsShown { get; private set; }
+
+    /// <summary>The saved terms were checked (<see cref="Check"/>): until then the window stays disabled too.</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsShellEnabled))] public partial bool IsChecked { get; private set; }
+
+    /// <summary>The window behind the screen takes input: only once checked and with the screen closed.</summary>
+    public bool IsShellEnabled => IsChecked && !IsShown;
+
+    /// <summary>
+    /// A broadcast is running (set by the main view model). Changed terms reported meanwhile wait until it ends, so the
+    /// screen never hides Stop from a live broadcast.
+    /// </summary>
+    public bool IsBroadcasting
+    {
+        get;
+        set
+        {
+            field = value;
+            if (!value && _updatePending)
+            {
+                _updatePending = false;
+                Show(review: false);
+            }
+        }
+    }
 
     /// <summary>Opened again from About: it closes instead of quitting.</summary>
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsBlocking), nameof(DismissLabel), nameof(Heading))]
@@ -74,6 +99,7 @@ public sealed partial class ConsentViewModel(GeneralSettingsViewModel settings, 
         {
             _accepted.TrySetResult();
         }
+        IsChecked = true;
     }
 
     /// <summary>The account reported a terms version: a newer one than the accepted one asks again.</summary>
@@ -84,7 +110,15 @@ public sealed partial class ConsentViewModel(GeneralSettingsViewModel settings, 
             return;
         }
         Version = version;
-        if (settings.Consent is { } consent && LegalTerms.IsNewer(version, consent.Version) && !IsBlocking)
+        if (settings.Consent is not { } consent || !LegalTerms.IsNewer(version, consent.Version) || IsBlocking)
+        {
+            return;
+        }
+        if (IsBroadcasting)
+        {
+            _updatePending = true;
+        }
+        else
         {
             Show(review: false);
         }

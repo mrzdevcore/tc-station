@@ -61,8 +61,16 @@ public partial class App : Application
         {
             return;
         }
-        _tray = new BroadcastTray(window, model.Broadcast);
-        window.Tray = _tray;
+        try
+        {
+            _tray = new BroadcastTray(window, model.Broadcast);
+            window.Tray = _tray;
+        }
+        catch (Exception ex)
+        {
+            // Not awaited by anyone: report it like any other unhandled error (safe dialog, log, shutdown).
+            await _host.Services.GetRequiredService<UnhandledErrors>().ReportAsync(ex);
+        }
     }
 
     private void OnExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)

@@ -123,7 +123,8 @@ public sealed class HttpDesktopApi : IDesktopApi, IDisposable
         await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
         var me = await ReadAsync<MeDto>(response, cancellationToken).ConfigureAwait(false);
         // A server older than the terms (tc-dashboard#94) sends no version: nothing this version can use.
-        return string.IsNullOrEmpty(me.TermsVersion) ? throw Invalid() : new TermsStatus(me.TermsVersion, me.TermsAccepted);
+        // No termsAccepted: unknown, so nothing to tell the user.
+        return string.IsNullOrEmpty(me.TermsVersion) ? throw Invalid() : new TermsStatus(me.TermsVersion, me.TermsAccepted ?? true);
     }
 
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, string? accessToken, object? body,
@@ -218,7 +219,7 @@ public sealed class HttpDesktopApi : IDesktopApi, IDisposable
     private sealed record ProblemDto(string? Error);
     private sealed record StationDto(Guid TenantId, string? TenantName, Guid StationId, string PublicId, string Name, string? Role);
     private sealed record OutputDto(string Format, string ContentType, Uri IngestUrl, Uri ListenerUrl);
-    private sealed record MeDto(string? TermsVersion, bool TermsAccepted);
+    private sealed record MeDto(string? TermsVersion, bool? TermsAccepted);
     private sealed record TargetDto(Guid StationId, string PublicId, string StationName, string Username, string Password, int MaxBitrateKbps,
         List<OutputDto>? Outputs);
 }

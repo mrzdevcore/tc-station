@@ -29,6 +29,11 @@
               <Button Content="Open the page again" Command="{Binding OpenSignInPageCommand}" HorizontalAlignment="Right" />
             </StackPanel>
           </c:SettingRow>
+          <c:SettingRow x:Name="TermsNoticeRow" Title="Terms of Service" Description="{Binding TermsNotice}"
+                        IsVisible="{Binding HasTermsNotice}">
+            <Button Content="Open the web app" Command="{Binding OpenWebAppCommand}"
+                    AutomationProperties.Name="Open the Tropicast web app to accept the terms" />
+          </c:SettingRow>
           <c:SettingRow Title="Stations" Description="Reload the stations this account can broadcast to." IsVisible="{Binding IsSignedIn}">
             <Button Content="Refresh stations" Command="{Binding RefreshStationsCommand}" />
           </c:SettingRow>

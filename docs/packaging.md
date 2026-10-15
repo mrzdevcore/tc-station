@@ -188,8 +188,9 @@ by the app itself, the same way on every platform (#68):
   never in the credential store or the logs. Deleting `settings.json` shows the screen again.
 - The version (`LegalTerms.Version` in `src/Tropicast.Station.Core/Settings/AppSettings.cs`) is the
   dashboard's `Legal.TermsVersion`; update both together. A newer version, bundled or reported by
-  the account (`GET /api/v1/auth/me` after sign-in), shows the screen again. If the account has not
-  accepted the current terms on the web, the Account page says so.
+  the account (`GET /api/v1/auth/me` after sign-in), shows the screen again, after the current
+  broadcast if one is live. Until it is answered, Go Live is off in the window and the tray. If the
+  account has not accepted the current terms on the web, the Account page says so.
 - With only a manual Icecast profile, Tropicast's services are not used: only the licenses and the
   privacy summary apply. The screen says this; there is no separate mode.
 - **Settings › About** shows the accepted version and date, opens the texts, and **Review** shows

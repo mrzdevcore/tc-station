@@ -106,8 +106,11 @@ internal sealed class FakeDesktopApi : IDesktopApi
             $"station-password-{n}"));
     }
 
+    public int TermsRequests { get; private set; }
+
     public Task<TermsStatus> GetTermsAsync(string accessToken, CancellationToken cancellationToken = default)
     {
+        TermsRequests++;
         ThrowIfOffline();
         AccessTokensSeen.Add(accessToken);
         return Terms is { } terms ? Task.FromResult(terms)

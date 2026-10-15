@@ -54,6 +54,15 @@ public sealed class HttpDesktopApiTests
     }
 
     [Fact]
+    public async Task Terms_without_the_accepted_flag_do_not_count_as_refused()
+    {
+        var (api, _) = Create(_ => Json(HttpStatusCode.OK, """{"termsVersion":"2026-10-14"}"""));
+        using var _ = api;
+
+        Assert.Equal(new TermsStatus("2026-10-14", true), await api.GetTermsAsync("at", Token));
+    }
+
+    [Fact]
     public async Task A_server_without_terms_is_an_answer_this_version_does_not_understand()
     {
         var (api, _) = Create(_ => Json(HttpStatusCode.OK, """{"id":"6f1c2a52-6a8e-4a43-9a43-6c7f3d3f8b11","email":"a@example.test","memberships":[]}"""));

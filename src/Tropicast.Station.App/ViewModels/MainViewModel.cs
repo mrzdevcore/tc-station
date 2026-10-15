@@ -43,6 +43,21 @@ public sealed partial class MainViewModel : ViewModelBase
         Broadcast = broadcast;
         Settings = settings;
         Consent = consent;
+        // No Go Live (window or tray) while the terms wait for an answer; changed terms wait for the broadcast to end.
+        consent.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ConsentViewModel.IsBlocking))
+            {
+                broadcast.IsConsentPending = consent.IsBlocking;
+            }
+        };
+        broadcast.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(BroadcastViewModel.IsActive))
+            {
+                consent.IsBroadcasting = broadcast.IsActive;
+            }
+        };
         NavEntries = new(AllEntries);
         SelectedNav = AllEntries[1];
     }

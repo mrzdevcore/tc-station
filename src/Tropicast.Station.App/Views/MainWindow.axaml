@@ -15,9 +15,9 @@
 
   <Panel>
     <!-- Sidebar (search + pages) beside the page content; the broadcast bar stays at the bottom of every page.
-         Disabled under the consent screen, so neither clicks nor Tab reach it. -->
+         Disabled under the consent screen (and until the saved terms are checked), so neither clicks nor Tab reach it. -->
     <SplitView x:Name="Shell" DisplayMode="Inline" IsPaneOpen="True" OpenPaneLength="248" CompactPaneLength="56"
-               PaneBackground="{DynamicResource SidebarBrush}" IsEnabled="{Binding !Consent.IsShown}">
+               PaneBackground="{DynamicResource SidebarBrush}" IsEnabled="{Binding Consent.IsShellEnabled}">
       <SplitView.Pane>
         <DockPanel>
           <StackPanel DockPanel.Dock="Top" Margin="8,12,12,8" Spacing="12">

@@ -42,6 +42,8 @@ public sealed partial class BroadcastViewModel : ViewModelBase, IDisposable
     [ObservableProperty] public partial string Status { get; set; } = "Select a saved profile and audio source, then Go Live.";
     [ObservableProperty] public partial string Elapsed { get; set; } = "00:00:00";
     [ObservableProperty] public partial bool IsActive { get; set; }
+    /// <summary>The consent screen waits for an answer: Go Live is off, from the window and the tray.</summary>
+    [ObservableProperty] public partial bool IsConsentPending { get; set; }
     [ObservableProperty] public partial bool IsReconnecting { get; set; }
     [ObservableProperty] public partial string ReconnectStatus { get; set; } = "";
     [ObservableProperty] public partial string Diagnostics { get; set; } = "Reconnects: 0; downtime: 00:00:00";
@@ -63,7 +65,7 @@ public sealed partial class BroadcastViewModel : ViewModelBase, IDisposable
         : "Select a saved profile to see its stream settings.";
     /// <summary>The station or profile Go Live publishes to.</summary>
     private Guid? TargetId => UseStation ? _account.SelectedStation?.StationId : _profiles.SelectedProfile?.Id;
-    private bool CanGoLive => !IsActive && !_disposed && !_confirming && !_profiles.IsBusy && !_audio.IsBusy && !_account.IsBusy
+    private bool CanGoLive => !IsActive && !IsConsentPending && !_disposed && !_confirming && !_profiles.IsBusy && !_audio.IsBusy && !_account.IsBusy
         && !_account.IsSigningIn && TargetId is not null && (_audio.SelectedInput ?? _audio.SelectedOutput) is not null;
     private bool CanStop => IsActive && State != BroadcastState.Stopping && !_confirming && !_disposed;
     private bool CanRetryNow => !_disposed && !_confirming && _controller.Snapshot.State == BroadcastState.Reconnecting
@@ -192,6 +194,8 @@ public sealed partial class BroadcastViewModel : ViewModelBase, IDisposable
             OnPropertyChanged(nameof(StreamSettings));
         }
     }
+
+    partial void OnIsConsentPendingChanged(bool value) => NotifyCommands();
 
     partial void OnUseStationChanged(bool value)
     {
