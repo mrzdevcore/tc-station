@@ -1,0 +1,78 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Tropicast.Station.App.ViewModels"
+             xmlns:c="using:Tropicast.Station.App.Controls"
+             x:Class="Tropicast.Station.App.Views.ConsentView"
+             x:DataType="vm:MainViewModel">
+  <!-- First-run screen (#68): covers the whole window until it is answered. -->
+  <Border Background="{DynamicResource ContentBrush}">
+    <DockPanel x:Name="Root" x:DataType="vm:ConsentViewModel" MaxWidth="680" Margin="24,20,24,16">
+      <StackPanel DockPanel.Dock="Bottom" Spacing="12" Margin="0,12,0,0">
+        <TextBlock x:Name="ConsentStatus" Classes="muted" Text="{Binding Status}" TextWrapping="Wrap"
+                   IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <CheckBox x:Name="ConsentAccept" IsChecked="{Binding IsAccepted}"
+                  AutomationProperties.Name="I accept the Terms of Service and the Privacy Policy">
+          <TextBlock Text="I accept the Terms of Service and the Privacy Policy." TextWrapping="Wrap" />
+        </CheckBox>
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+          <Button x:Name="ConsentDismiss" Content="{Binding DismissLabel}" Command="{Binding DismissCommand}" MinWidth="96"
+                  HorizontalContentAlignment="Center"
+                  AutomationProperties.Name="{Binding DismissLabel}" />
+          <Button x:Name="ConsentContinue" Classes="accent" Content="Continue" Command="{Binding ContinueCommand}" MinWidth="96"
+                  HorizontalContentAlignment="Center"
+                  IsDefault="True" AutomationProperties.Name="Continue"
+                  AutomationProperties.HelpText="Records that you accepted this version on this computer." />
+        </StackPanel>
+      </StackPanel>
+
+      <ScrollViewer>
+        <StackPanel Spacing="12">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <Image Source="/Assets/tropicast-512.png" Width="36" Height="36" />
+            <TextBlock x:Name="ConsentHeading" Classes="pageTitle" Text="{Binding Heading}" Focusable="True"
+                       VerticalAlignment="Center" TextWrapping="Wrap" AutomationProperties.Name="{Binding Heading}" />
+          </StackPanel>
+
+          <StackPanel x:Name="ConsentSummary" Spacing="12" IsVisible="{Binding !ShowsLicenses}">
+            <TextBlock Classes="pageIntro" TextWrapping="Wrap"
+                       Text="Before you start, read how Tropicast Station handles your data and the terms that apply." />
+            <c:SettingsCard>
+              <StackPanel Margin="20,14" Spacing="8">
+                <TextBlock Classes="rowTitle" Text="Your data" />
+                <TextBlock TextWrapping="Wrap" Text="• Audio goes only to the server you choose: your Tropicast station, or your own Icecast server." />
+                <TextBlock TextWrapping="Wrap" Text="• No analytics or telemetry: the app sends nothing about how you use it." />
+                <TextBlock TextWrapping="Wrap" Text="• Logs stay on this computer, without passwords or tokens. They leave it only in a diagnostics export you make." />
+                <TextBlock TextWrapping="Wrap" Text="• Passwords and the account sign-in are kept in the credential store of your system." />
+              </StackPanel>
+            </c:SettingsCard>
+            <c:SettingsCard>
+              <StackPanel Margin="20,14" Spacing="8">
+                <TextBlock Classes="rowTitle" Text="Which terms apply" />
+                <TextBlock TextWrapping="Wrap"
+                           Text="With a Tropicast account, the Tropicast Terms of Service and Privacy Policy apply. With your own Icecast server only, Tropicast receives nothing: the app's licenses and this notice apply." />
+                <TextBlock Classes="muted" Text="{Binding VersionText}" />
+                <WrapPanel Orientation="Horizontal">
+                  <Button x:Name="ConsentTermsLink" Classes="link" Content="Terms of Service" Command="{Binding OpenTermsCommand}"
+                          Margin="0,0,20,4" AutomationProperties.Name="Terms of Service (opens in the browser)" />
+                  <Button x:Name="ConsentPrivacyLink" Classes="link" Content="Privacy Policy" Command="{Binding OpenPrivacyCommand}"
+                          Margin="0,0,20,4" AutomationProperties.Name="Privacy Policy (opens in the browser)" />
+                  <Button x:Name="ConsentLicensesLink" Classes="link" Content="Third-party licenses" Command="{Binding ToggleLicensesCommand}"
+                          Margin="0,0,20,4" AutomationProperties.Name="Third-party licenses" />
+                </WrapPanel>
+              </StackPanel>
+            </c:SettingsCard>
+          </StackPanel>
+
+          <StackPanel x:Name="ConsentLicenses" Spacing="8" IsVisible="{Binding ShowsLicenses}">
+            <Button x:Name="ConsentLicensesBack" Classes="link" Content="‹ Back to the summary" Command="{Binding ToggleLicensesCommand}"
+                    AutomationProperties.Name="Back to the summary" />
+            <c:SettingsCard>
+              <SelectableTextBlock x:Name="ConsentLicensesText" Classes="code" Text="{Binding Licenses}" TextWrapping="Wrap" Margin="20,14"
+                                   AutomationProperties.Name="Third-party licenses" />
+            </c:SettingsCard>
+          </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </DockPanel>
+  </Border>
+</UserControl>

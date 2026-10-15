@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
+    <!-- Shown on the first-run screen and in Settings › About (#68). -->
+    <EmbeddedResource Include="..\..\THIRD_PARTY_NOTICES" LogicalName="THIRD_PARTY_NOTICES" />
   </ItemGroup>
 
   <ItemGroup>

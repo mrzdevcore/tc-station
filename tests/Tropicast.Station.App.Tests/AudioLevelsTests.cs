@@ -16,7 +16,7 @@ public sealed class AudioLevelsTests
     [AvaloniaFact]
     public async Task Preview_feeds_normalized_stereo_meters_without_broadcast_and_stop_clears_them()
     {
-        using var host = AppHost.Create(["--demo-audio"]);
+        using var host = TestHost.Create(["--demo-audio"]);
         var window = host.Services.GetRequiredService<MainWindow>();
         window.Show();
         var audio = host.Services.GetRequiredService<AudioDevicesViewModel>();
@@ -51,7 +51,7 @@ public sealed class AudioLevelsTests
     [AvaloniaFact]
     public async Task Silence_is_visible_and_optional_notification_fires_once_per_episode()
     {
-        using var host = AppHost.Create(["--demo-audio"]);
+        using var host = TestHost.Create(["--demo-audio"]);
         var window = host.Services.GetRequiredService<MainWindow>();
         window.Show();
         var levels = host.Services.GetRequiredService<AudioLevelsViewModel>();
@@ -88,7 +88,7 @@ public sealed class AudioLevelsTests
     [AvaloniaFact]
     public void Clipping_hold_is_visible_and_new_mono_capture_resets_stereo_levels()
     {
-        using var host = AppHost.Create(["--demo-audio"]);
+        using var host = TestHost.Create(["--demo-audio"]);
         var model = host.Services.GetRequiredService<AudioLevelsViewModel>();
         var meter = host.Services.GetRequiredService<AudioCaptureService>().Levels;
         meter.Start(AudioFormat.EncoderDefault);
@@ -111,7 +111,7 @@ public sealed class AudioLevelsTests
     [AvaloniaFact]
     public void Levels_page_does_not_push_primary_control_outside_small_window()
     {
-        using var host = AppHost.Create(["--demo-audio"]);
+        using var host = TestHost.Create(["--demo-audio"]);
         var window = host.Services.GetRequiredService<MainWindow>();
         window.Width = 640;
         window.Height = 420;

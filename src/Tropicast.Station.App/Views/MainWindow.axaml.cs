@@ -28,7 +28,7 @@ public partial class MainWindow : Window
     private long? _deactivatedAt;
     private WindowState _restoreState = WindowState.Normal;
 
-    private bool HidesToTray => Tray is not null && DataContext is MainViewModel { Settings.KeepInTray: true };
+    private bool HidesToTray => Tray is not null && DataContext is MainViewModel { Settings.KeepInTray: true, Consent.IsBlocking: false };
     /// <summary>Below this window width the sidebar collapses to icons and opens over the page.</summary>
     private const double CompactWidth = 760;
 
@@ -192,18 +192,31 @@ public partial class MainWindow : Window
             model.PropertyChanged += OnModelChanged;
             _notifications = new(this) { Position = NotificationPosition.TopRight, MaxItems = 1 };
             model.Audio.Levels.SilenceStarted += OnSilenceStarted;
+            model.Consent.QuitRequested += OnConsentQuit;
             model.Settings.LoadCommand.Execute(null);
-            model.Account.LoadCommand.Execute(null);
-            model.Profiles.LoadCommand.Execute(null);
-            model.Audio.RefreshCommand.Execute(null);
+            _ = StartAsync(model);
         }
     }
+
+    /// <summary>Loads the account, profiles and audio devices once the terms are accepted: nothing before (#68).</summary>
+    private static async Task StartAsync(MainViewModel model)
+    {
+        await model.Settings.Stored;
+        model.Consent.Check();
+        await model.Consent.Accepted;
+        model.Account.LoadCommand.Execute(null);
+        model.Profiles.LoadCommand.Execute(null);
+        model.Audio.RefreshCommand.Execute(null);
+    }
+
+    private void OnConsentQuit(object? sender, EventArgs e) => Quit();
 
     protected override void OnClosed(EventArgs e)
     {
         if (DataContext is MainViewModel model)
         {
             model.Audio.Levels.SilenceStarted -= OnSilenceStarted;
+            model.Consent.QuitRequested -= OnConsentQuit;
             model.PropertyChanged -= OnModelChanged;
             model.Account.SignInCommand.Cancel();
             model.Profiles.TestCommand.Cancel();

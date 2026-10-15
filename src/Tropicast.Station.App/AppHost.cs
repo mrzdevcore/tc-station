@@ -36,11 +36,13 @@ internal static class AppHost
             builder.Services.AddMacAudioCapture();
         }
 
+        var apiBaseUrl = ApiBaseUrl(builder.Configuration["Tropicast:ApiBaseUrl"]);
         builder.Services
             .AddStationCore()
             .AddStationAudio(demoAudio)
             .AddStationEncoding()
-            .AddStationInfrastructure(ApiBaseUrl(builder.Configuration["Tropicast:ApiBaseUrl"]));
+            .AddStationInfrastructure(apiBaseUrl);
+        builder.Services.AddSingleton(LegalLinks.For(apiBaseUrl ?? Infrastructure.HttpDesktopApi.DefaultBaseUrl));
 
         builder.Services.AddSingleton<MainViewModel>();
         builder.Services.AddSingleton<AccountViewModel>();
@@ -50,6 +52,7 @@ internal static class AppHost
         builder.Services.AddSingleton<AudioLevelsViewModel>();
         builder.Services.AddSingleton<BroadcastViewModel>();
         builder.Services.AddSingleton<GeneralSettingsViewModel>();
+        builder.Services.AddSingleton<ConsentViewModel>();
         builder.Services.AddSingleton<ITraySupport, TraySupport>();
         builder.Services.AddSingleton<ITrayNotice, TrayNotice>();
         builder.Services.AddSingleton<IBroadcastConfirmation, BroadcastConfirmation>();

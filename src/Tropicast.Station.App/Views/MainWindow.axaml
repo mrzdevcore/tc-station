@@ -3,6 +3,7 @@
         xmlns:vm="using:Tropicast.Station.App.ViewModels"
         xmlns:c="using:Tropicast.Station.App.Controls"
         xmlns:pages="using:Tropicast.Station.App.Views.Pages"
+        xmlns:v="using:Tropicast.Station.App.Views"
         x:Class="Tropicast.Station.App.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Icon="/Assets/tropicast.ico"
@@ -12,144 +13,148 @@
         Background="{DynamicResource ContentBrush}"
         WindowStartupLocation="CenterScreen">
 
-  <!-- Sidebar (search + pages) beside the page content; the broadcast bar stays at the bottom of every page. -->
-  <SplitView x:Name="Shell" DisplayMode="Inline" IsPaneOpen="True" OpenPaneLength="248" CompactPaneLength="56"
-             PaneBackground="{DynamicResource SidebarBrush}">
-    <SplitView.Pane>
+  <Panel>
+    <!-- Sidebar (search + pages) beside the page content; the broadcast bar stays at the bottom of every page.
+         Disabled under the consent screen, so neither clicks nor Tab reach it. -->
+    <SplitView x:Name="Shell" DisplayMode="Inline" IsPaneOpen="True" OpenPaneLength="248" CompactPaneLength="56"
+               PaneBackground="{DynamicResource SidebarBrush}" IsEnabled="{Binding !Consent.IsShown}">
+      <SplitView.Pane>
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Top" Margin="8,12,12,8" Spacing="12">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Button x:Name="PaneToggle" Classes="icon" Click="OnTogglePane" IsVisible="False"
+                      ToolTip.Tip="Show or hide the navigation" AutomationProperties.Name="Show or hide the navigation">
+                <c:LineIcon Data="{StaticResource Icon.Menu}" Width="20" Height="20" />
+              </Button>
+              <StackPanel Orientation="Horizontal" Spacing="10" Margin="6,0,0,0" IsVisible="{Binding #Shell.IsPaneOpen}">
+                <Image Source="/Assets/tropicast-512.png" Width="28" Height="28" />
+                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" MaxWidth="170" />
+              </StackPanel>
+            </StackPanel>
+            <TextBox x:Name="SearchBox" Text="{Binding SearchText}" PlaceholderText="Search settings…" Margin="4,0,0,0"
+                     IsVisible="{Binding #Shell.IsPaneOpen}" AutomationProperties.Name="Search settings"
+                     AutomationProperties.HelpText="Filters the pages and settings. Shortcut: Ctrl+F.">
+              <TextBox.InnerLeftContent>
+                <c:LineIcon Data="{StaticResource Icon.Search}" Margin="10,0,2,0" Foreground="{DynamicResource MutedTextBrush}" />
+              </TextBox.InnerLeftContent>
+            </TextBox>
+          </StackPanel>
+          <ListBox x:Name="MainNav" Classes="nav" ItemsSource="{Binding NavEntries}" SelectedItem="{Binding SelectedNav}"
+                   AutomationProperties.Name="Pages">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:NavEntry">
+                <Panel>
+                  <TextBlock Classes="caption" Text="{Binding Label}" Margin="0,10,0,0">
+                    <TextBlock.IsVisible>
+                      <MultiBinding Converter="{x:Static BoolConverters.And}">
+                        <Binding Path="IsCaption" />
+                        <Binding Path="$parent[SplitView].IsPaneOpen" />
+                      </MultiBinding>
+                    </TextBlock.IsVisible>
+                  </TextBlock>
+                  <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding IsSelectable}" ToolTip.Tip="{Binding Label}">
+                    <c:LineIcon Data="{Binding Icon, Converter={x:Static c:Converters.Icon}}" />
+                    <TextBlock Text="{Binding Label}" VerticalAlignment="Center"
+                               IsVisible="{Binding $parent[SplitView].IsPaneOpen}" />
+                  </StackPanel>
+                </Panel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </SplitView.Pane>
+
       <DockPanel>
-        <StackPanel DockPanel.Dock="Top" Margin="8,12,12,8" Spacing="12">
-          <StackPanel Orientation="Horizontal" Spacing="6">
-            <Button x:Name="PaneToggle" Classes="icon" Click="OnTogglePane" IsVisible="False"
-                    ToolTip.Tip="Show or hide the navigation" AutomationProperties.Name="Show or hide the navigation">
-              <c:LineIcon Data="{StaticResource Icon.Menu}" Width="20" Height="20" />
-            </Button>
-            <StackPanel Orientation="Horizontal" Spacing="10" Margin="6,0,0,0" IsVisible="{Binding #Shell.IsPaneOpen}">
-              <Image Source="/Assets/tropicast-512.png" Width="28" Height="28" />
-              <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center"
-                         TextTrimming="CharacterEllipsis" MaxWidth="170" />
+        <Border DockPanel.Dock="Bottom" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource CardBorderBrush}"
+                BorderThickness="0,1,0,0" Padding="20,12">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+              <Border Classes="state"
+                      Classes.live="{Binding Broadcast.State, Converter={x:Static c:Converters.Is}, ConverterParameter=Live}"
+                      Classes.busy="{Binding Broadcast.State, Converter={x:Static c:Converters.Is}, ConverterParameter=Connecting|Reconnecting|Stopping}"
+                      Classes.error="{Binding Broadcast.State, Converter={x:Static c:Converters.Is}, ConverterParameter=Error}">
+                <TextBlock x:Name="BroadcastState" Text="{Binding Broadcast.StateLabel}"
+                           AutomationProperties.Name="{Binding Broadcast.StateLabel}" />
+              </Border>
+              <TextBlock Classes="code" Text="{Binding Broadcast.Elapsed}" VerticalAlignment="Center"
+                         AutomationProperties.Name="Elapsed live time" />
             </StackPanel>
-          </StackPanel>
-          <TextBox x:Name="SearchBox" Text="{Binding SearchText}" PlaceholderText="Search settings…" Margin="4,0,0,0"
-                   IsVisible="{Binding #Shell.IsPaneOpen}" AutomationProperties.Name="Search settings"
-                   AutomationProperties.HelpText="Filters the pages and settings. Shortcut: Ctrl+F.">
-            <TextBox.InnerLeftContent>
-              <c:LineIcon Data="{StaticResource Icon.Search}" Margin="10,0,2,0" Foreground="{DynamicResource MutedTextBrush}" />
-            </TextBox.InnerLeftContent>
-          </TextBox>
-        </StackPanel>
-        <ListBox x:Name="MainNav" Classes="nav" ItemsSource="{Binding NavEntries}" SelectedItem="{Binding SelectedNav}"
-                 AutomationProperties.Name="Pages">
-          <ListBox.ItemTemplate>
-            <DataTemplate x:DataType="vm:NavEntry">
-              <Panel>
-                <TextBlock Classes="caption" Text="{Binding Label}" Margin="0,10,0,0">
-                  <TextBlock.IsVisible>
-                    <MultiBinding Converter="{x:Static BoolConverters.And}">
-                      <Binding Path="IsCaption" />
-                      <Binding Path="$parent[SplitView].IsPaneOpen" />
-                    </MultiBinding>
-                  </TextBlock.IsVisible>
-                </TextBlock>
-                <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding IsSelectable}" ToolTip.Tip="{Binding Label}">
-                  <c:LineIcon Data="{Binding Icon, Converter={x:Static c:Converters.Icon}}" />
-                  <TextBlock Text="{Binding Label}" VerticalAlignment="Center"
-                             IsVisible="{Binding $parent[SplitView].IsPaneOpen}" />
+            <Panel Grid.Column="1" Margin="20,0" VerticalAlignment="Center" ClipToBounds="True">
+              <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding Broadcast.IsReconnecting}">
+                <TextBlock x:Name="ReconnectCountdown" Text="{Binding Broadcast.ReconnectStatus}" VerticalAlignment="Center"
+                           AutomationProperties.Name="{Binding Broadcast.ReconnectStatus}" />
+                <Button x:Name="RetryNowButton" Content="Retry now" Command="{Binding Broadcast.RetryNowCommand}"
+                        AutomationProperties.Name="Retry now" />
+              </StackPanel>
+              <!-- Compact RMS meters, so levels stay in sight on every page. -->
+              <ItemsControl ItemsSource="{Binding Audio.Levels.ChannelLevels}" IsVisible="{Binding !Broadcast.IsReconnecting}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate><StackPanel Spacing="4" /></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:ChannelLevelViewModel">
+                    <ProgressBar Minimum="-90" Maximum="0" Value="{Binding Rms}" Height="5" MinHeight="5" MinWidth="0"
+                                 MaxWidth="160" HorizontalAlignment="Left" Width="160" CornerRadius="3"
+                                 Foreground="{DynamicResource MeterRmsBrush}" ToolTip.Tip="{Binding Label}"
+                                 AutomationProperties.Name="{Binding RmsName}" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Panel>
+            <Panel Grid.Column="2">
+              <Button x:Name="GoLiveButton" Classes="accent" Command="{Binding Broadcast.GoLiveCommand}"
+                      IsVisible="{Binding !Broadcast.IsActive}" Padding="18,8" FontWeight="SemiBold"
+                      AutomationProperties.Name="Go Live"
+                      AutomationProperties.HelpText="Start broadcasting the selected source to the selected station or profile.">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <c:LineIcon Data="{StaticResource Icon.Play}" />
+                  <TextBlock Text="Go Live" />
                 </StackPanel>
-              </Panel>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
-      </DockPanel>
-    </SplitView.Pane>
+              </Button>
+              <Button x:Name="StopBroadcastButton" Classes="danger" Command="{Binding Broadcast.StopCommand}"
+                      IsVisible="{Binding Broadcast.IsActive}" Padding="18,8" FontWeight="SemiBold"
+                      AutomationProperties.Name="Stop broadcast"
+                      AutomationProperties.HelpText="Stop the active stream after confirmation.">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <c:LineIcon Data="{StaticResource Icon.Stop}" />
+                  <TextBlock Text="Stop broadcast" />
+                </StackPanel>
+              </Button>
+            </Panel>
+          </Grid>
+        </Border>
 
-    <DockPanel>
-      <Border DockPanel.Dock="Bottom" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource CardBorderBrush}"
-              BorderThickness="0,1,0,0" Padding="20,12">
-        <Grid ColumnDefinitions="Auto,*,Auto">
-          <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-            <Border Classes="state"
-                    Classes.live="{Binding Broadcast.State, Converter={x:Static c:Converters.Is}, ConverterParameter=Live}"
-                    Classes.busy="{Binding Broadcast.State, Converter={x:Static c:Converters.Is}, ConverterParameter=Connecting|Reconnecting|Stopping}"
-                    Classes.error="{Binding Broadcast.State, Converter={x:Static c:Converters.Is}, ConverterParameter=Error}">
-              <TextBlock x:Name="BroadcastState" Text="{Binding Broadcast.StateLabel}"
-                         AutomationProperties.Name="{Binding Broadcast.StateLabel}" />
-            </Border>
-            <TextBlock Classes="code" Text="{Binding Broadcast.Elapsed}" VerticalAlignment="Center"
-                       AutomationProperties.Name="Elapsed live time" />
+        <Panel>
+          <!-- No page shows under "No settings found". -->
+          <Panel x:Name="PageHost" IsVisible="{Binding !HasNoSearchResults}">
+            <pages:BroadcastPage x:Name="BroadcastPage"
+                                 IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Broadcast}" />
+            <pages:AudioSourcePage x:Name="AudioSourcePage"
+                                   IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=AudioSource}" />
+            <pages:LevelsPage x:Name="LevelsPage"
+                              IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Levels}" />
+            <pages:GeneralPage x:Name="GeneralPage"
+                               IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=General}" />
+            <pages:AccountPage x:Name="AccountPage"
+                               IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Account}" />
+            <pages:ProfilesPage x:Name="ProfilesPage"
+                                IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Profiles}" />
+            <pages:DiagnosticsPage x:Name="DiagnosticsPage"
+                                   IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Diagnostics}" />
+            <pages:AboutPage x:Name="AboutPage"
+                             IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=About}" />
+          </Panel>
+          <StackPanel x:Name="NoResults" IsVisible="{Binding HasNoSearchResults}" HorizontalAlignment="Center"
+                      VerticalAlignment="Center" Spacing="6">
+            <c:LineIcon Data="{StaticResource Icon.Search}" Width="28" Height="28" HorizontalAlignment="Center"
+                        Foreground="{DynamicResource MutedTextBrush}" />
+            <TextBlock Classes="rowTitle" Text="No settings found" HorizontalAlignment="Center" />
+            <TextBlock Classes="muted" Text="Try another word, or clear the search." HorizontalAlignment="Center" />
           </StackPanel>
-          <Panel Grid.Column="1" Margin="20,0" VerticalAlignment="Center" ClipToBounds="True">
-            <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding Broadcast.IsReconnecting}">
-              <TextBlock x:Name="ReconnectCountdown" Text="{Binding Broadcast.ReconnectStatus}" VerticalAlignment="Center"
-                         AutomationProperties.Name="{Binding Broadcast.ReconnectStatus}" />
-              <Button x:Name="RetryNowButton" Content="Retry now" Command="{Binding Broadcast.RetryNowCommand}"
-                      AutomationProperties.Name="Retry now" />
-            </StackPanel>
-            <!-- Compact RMS meters, so levels stay in sight on every page. -->
-            <ItemsControl ItemsSource="{Binding Audio.Levels.ChannelLevels}" IsVisible="{Binding !Broadcast.IsReconnecting}">
-              <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate><StackPanel Spacing="4" /></ItemsPanelTemplate>
-              </ItemsControl.ItemsPanel>
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="vm:ChannelLevelViewModel">
-                  <ProgressBar Minimum="-90" Maximum="0" Value="{Binding Rms}" Height="5" MinHeight="5" MinWidth="0"
-                               MaxWidth="160" HorizontalAlignment="Left" Width="160" CornerRadius="3"
-                               Foreground="{DynamicResource MeterRmsBrush}" ToolTip.Tip="{Binding Label}"
-                               AutomationProperties.Name="{Binding RmsName}" />
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </Panel>
-          <Panel Grid.Column="2">
-            <Button x:Name="GoLiveButton" Classes="accent" Command="{Binding Broadcast.GoLiveCommand}"
-                    IsVisible="{Binding !Broadcast.IsActive}" Padding="18,8" FontWeight="SemiBold"
-                    AutomationProperties.Name="Go Live"
-                    AutomationProperties.HelpText="Start broadcasting the selected source to the selected station or profile.">
-              <StackPanel Orientation="Horizontal" Spacing="8">
-                <c:LineIcon Data="{StaticResource Icon.Play}" />
-                <TextBlock Text="Go Live" />
-              </StackPanel>
-            </Button>
-            <Button x:Name="StopBroadcastButton" Classes="danger" Command="{Binding Broadcast.StopCommand}"
-                    IsVisible="{Binding Broadcast.IsActive}" Padding="18,8" FontWeight="SemiBold"
-                    AutomationProperties.Name="Stop broadcast"
-                    AutomationProperties.HelpText="Stop the active stream after confirmation.">
-              <StackPanel Orientation="Horizontal" Spacing="8">
-                <c:LineIcon Data="{StaticResource Icon.Stop}" />
-                <TextBlock Text="Stop broadcast" />
-              </StackPanel>
-            </Button>
-          </Panel>
-        </Grid>
-      </Border>
-
-      <Panel>
-        <!-- No page shows under "No settings found". -->
-        <Panel x:Name="PageHost" IsVisible="{Binding !HasNoSearchResults}">
-          <pages:BroadcastPage x:Name="BroadcastPage"
-                               IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Broadcast}" />
-          <pages:AudioSourcePage x:Name="AudioSourcePage"
-                                 IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=AudioSource}" />
-          <pages:LevelsPage x:Name="LevelsPage"
-                            IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Levels}" />
-          <pages:GeneralPage x:Name="GeneralPage"
-                             IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=General}" />
-          <pages:AccountPage x:Name="AccountPage"
-                             IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Account}" />
-          <pages:ProfilesPage x:Name="ProfilesPage"
-                              IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Profiles}" />
-          <pages:DiagnosticsPage x:Name="DiagnosticsPage"
-                                 IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=Diagnostics}" />
-          <pages:AboutPage x:Name="AboutPage"
-                           IsVisible="{Binding SelectedPage, Converter={x:Static c:Converters.Is}, ConverterParameter=About}" />
         </Panel>
-        <StackPanel x:Name="NoResults" IsVisible="{Binding HasNoSearchResults}" HorizontalAlignment="Center"
-                    VerticalAlignment="Center" Spacing="6">
-          <c:LineIcon Data="{StaticResource Icon.Search}" Width="28" Height="28" HorizontalAlignment="Center"
-                      Foreground="{DynamicResource MutedTextBrush}" />
-          <TextBlock Classes="rowTitle" Text="No settings found" HorizontalAlignment="Center" />
-          <TextBlock Classes="muted" Text="Try another word, or clear the search." HorizontalAlignment="Center" />
-        </StackPanel>
-      </Panel>
-    </DockPanel>
-  </SplitView>
+      </DockPanel>
+    </SplitView>
+    <v:ConsentView x:Name="ConsentOverlay" IsVisible="{Binding Consent.IsShown}" />
+  </Panel>
 </Window>

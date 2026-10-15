@@ -12,13 +12,15 @@ public sealed partial class AccountViewModel : ViewModelBase, IDisposable
 {
     private readonly AccountService _account;
     private readonly IExternalBrowser _browser;
+    private readonly ConsentViewModel _consent;
     private Uri? _signInPage;
     private bool _syncing;
 
-    public AccountViewModel(AccountService account, IExternalBrowser browser)
+    public AccountViewModel(AccountService account, IExternalBrowser browser, ConsentViewModel consent)
     {
         _account = account;
         _browser = browser;
+        _consent = consent;
         account.Changed += OnAccountChanged;
     }
 
@@ -47,6 +49,7 @@ public sealed partial class AccountViewModel : ViewModelBase, IDisposable
             if (_account.IsSignedIn)
             {
                 await RefreshQuietlyAsync();
+                await CheckTermsAsync();
             }
         });
     }
@@ -68,6 +71,7 @@ public sealed partial class AccountViewModel : ViewModelBase, IDisposable
                 OpenSignInPage();
             }).GetTask(), cancellationToken);
             Status = _account.Stations.Count == 0 ? "Signed in. This account has no station yet: create one on the web." : "Signed in.";
+            await CheckTermsAsync();
         }
         catch (OperationCanceledException)
         {
@@ -148,6 +152,26 @@ public sealed partial class AccountViewModel : ViewModelBase, IDisposable
         catch (DesktopApiException ex) when (ex.Error == DesktopApiError.Unavailable)
         {
             Status = "Offline: showing the stations from the last session.";
+        }
+    }
+
+    /// <summary>
+    /// Asks the account for the terms version (a newer one shows the consent screen again) and whether the user
+    /// accepted it on the web. Offline, or with a server older than the terms, the bundled version applies.
+    /// </summary>
+    private async Task CheckTermsAsync()
+    {
+        try
+        {
+            var terms = await _account.GetTermsAsync();
+            _consent.ApplyAccountVersion(terms.Version);
+            if (!terms.Accepted)
+            {
+                Status = "Your account has not accepted the current Terms of Service yet: sign in on the web to accept them.";
+            }
+        }
+        catch (Exception ex) when (ex is DesktopApiException or SecretStoreException)
+        {
         }
     }
 

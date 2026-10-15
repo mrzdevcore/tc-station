@@ -12,7 +12,20 @@
           <c:SettingRow Title="{Binding Title}" Description="Broadcast audio from this computer to Tropicast or to your own Icecast server.">
             <TextBlock x:Name="VersionText" Text="{Binding Version}" />
           </c:SettingRow>
-          <c:SettingRow Title="Licence" Description="Apache License 2.0. Third-party notices ship with the app." />
+          <c:SettingRow Title="Terms of Service and Privacy Policy" Description="{Binding Consent.AcceptedSummary}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Content="Terms" Command="{Binding Consent.OpenTermsCommand}"
+                      AutomationProperties.Name="Terms of Service (opens in the browser)" />
+              <Button Content="Privacy" Command="{Binding Consent.OpenPrivacyCommand}"
+                      AutomationProperties.Name="Privacy Policy (opens in the browser)" />
+              <Button x:Name="ReviewTermsButton" Content="Review" Command="{Binding Consent.ReviewCommand}"
+                      AutomationProperties.Name="Review terms"
+                      AutomationProperties.HelpText="Shows the screen of the first start again: data summary, terms and licenses." />
+            </StackPanel>
+          </c:SettingRow>
+          <c:SettingRow Title="Licence" Description="Apache License 2.0. FFmpeg, LAME, Opus and OpenSSL ship under their own licenses.">
+            <Button x:Name="LicensesButton" Content="Third-party licenses" Command="{Binding Consent.ReviewLicensesCommand}" />
+          </c:SettingRow>
           <c:SettingRow Title="Theme" Description="Follows the light or dark setting of your system." />
         </c:SettingsCard>
       </StackPanel>

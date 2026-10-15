@@ -19,7 +19,7 @@ public sealed class AudioDevicesTests
     public async Task Picker_groups_sources_and_active_removal_clears_selection_and_shows_error()
     {
         var provider = new ToneAudioCaptureProvider();
-        using var host = AppHost.Create([], services =>
+        using var host = TestHost.Create([], services =>
         {
             services.AddSingleton<IAudioCaptureProvider>(provider);
             services.AddSingleton<IProfileStore, MemoryProfiles>();
@@ -58,7 +58,7 @@ public sealed class AudioDevicesTests
     public async Task Renamed_device_preserves_selection_by_stable_id()
     {
         var provider = new ToneAudioCaptureProvider();
-        using var host = AppHost.Create([], s => s.AddSingleton<IAudioCaptureProvider>(provider));
+        using var host = TestHost.Create([], s => s.AddSingleton<IAudioCaptureProvider>(provider));
         var model = host.Services.GetRequiredService<AudioDevicesViewModel>();
         await model.RefreshCommand.ExecuteAsync(null);
         model.SelectedInput = model.Inputs[0];
@@ -72,7 +72,7 @@ public sealed class AudioDevicesTests
     [Fact]
     public void Demo_is_explicit_and_does_not_replace_an_injected_platform_adapter()
     {
-        using var normal = AppHost.Create([]);
+        using var normal = TestHost.Create([]);
         if (OperatingSystem.IsWindows())
         {
             Assert.IsType<WindowsAudioCaptureProvider>(normal.Services.GetRequiredService<IAudioCaptureProvider>());
@@ -89,7 +89,7 @@ public sealed class AudioDevicesTests
         {
             Assert.IsType<UnavailableAudioCaptureProvider>(normal.Services.GetRequiredService<IAudioCaptureProvider>());
         }
-        using var demo = AppHost.Create(["--demo-audio"]);
+        using var demo = TestHost.Create(["--demo-audio"]);
         Assert.IsType<ToneAudioCaptureProvider>(demo.Services.GetRequiredService<IAudioCaptureProvider>());
     }
 }

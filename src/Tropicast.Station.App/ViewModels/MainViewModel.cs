@@ -32,7 +32,7 @@ public sealed partial class MainViewModel : ViewModelBase
     ];
 
     public MainViewModel(IAppInfo appInfo, AccountViewModel account, ProfileEditorViewModel profiles, AudioDevicesViewModel audio,
-        BroadcastViewModel broadcast, GeneralSettingsViewModel settings)
+        BroadcastViewModel broadcast, GeneralSettingsViewModel settings, ConsentViewModel consent)
     {
         ArgumentNullException.ThrowIfNull(appInfo);
         Title = appInfo.ProductName;
@@ -42,6 +42,7 @@ public sealed partial class MainViewModel : ViewModelBase
         Audio = audio;
         Broadcast = broadcast;
         Settings = settings;
+        Consent = consent;
         NavEntries = new(AllEntries);
         SelectedNav = AllEntries[1];
     }
@@ -55,6 +56,7 @@ public sealed partial class MainViewModel : ViewModelBase
     public AudioDevicesViewModel Audio { get; }
     public BroadcastViewModel Broadcast { get; }
     public GeneralSettingsViewModel Settings { get; }
+    public ConsentViewModel Consent { get; }
 
     /// <summary>Sidebar entries left by the settings search, captions included.</summary>
     public ObservableCollection<NavEntry> NavEntries { get; }

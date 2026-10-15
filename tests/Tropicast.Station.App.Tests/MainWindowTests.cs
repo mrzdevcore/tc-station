@@ -14,7 +14,7 @@ public sealed class MainWindowTests
     [AvaloniaFact]
     public void Host_resolves_and_shows_main_window()
     {
-        using var host = AppHost.Create([], services =>
+        using var host = TestHost.Create([], services =>
         {
             services.AddSingleton<IProfileStore, MemoryProfiles>();
             services.AddSingleton<ISecretStore, MemorySecrets>();
@@ -36,7 +36,7 @@ public sealed class MainWindowTests
     public void Host_container_is_valid()
     {
         Assert.True(Avalonia.Threading.Dispatcher.UIThread.CheckAccess());
-        using var host = AppHost.Create([]);
+        using var host = TestHost.Create([]);
 
         Assert.Same(
             host.Services.GetRequiredService<MainViewModel>(),

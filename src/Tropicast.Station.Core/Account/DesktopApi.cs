@@ -87,7 +87,13 @@ public interface IDesktopApi
 
     Task<IssuedStationTarget> GetBroadcastTargetAsync(string accessToken, Guid tenantId, Guid stationId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>The current Terms of Service version and whether the signed-in user accepted it (on the web).</summary>
+    Task<TermsStatus> GetTermsAsync(string accessToken, CancellationToken cancellationToken = default);
 }
+
+/// <summary>The account's view of the Terms of Service and Privacy Policy: the current version, and whether the user accepted it.</summary>
+public sealed record TermsStatus(string Version, bool Accepted);
 
 /// <summary>Non-secret account state kept between runs: the stations and their last broadcast targets.</summary>
 public sealed record AccountData(IReadOnlyList<AccountStation> Stations, IReadOnlyList<StationTarget> Targets, Guid? SelectedStationId)

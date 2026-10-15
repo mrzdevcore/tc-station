@@ -19,7 +19,7 @@ public sealed class ProfileEditorTests
     {
         var profiles = new MemoryProfiles();
         var secrets = new MemorySecrets();
-        using var host = AppHost.Create([], services =>
+        using var host = TestHost.Create([], services =>
         {
             services.AddSingleton<IProfileStore>(profiles);
             services.AddSingleton<ISecretStore>(secrets);

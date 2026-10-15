@@ -35,8 +35,7 @@ public partial class App : Application
             errors.Shutdown = () => desktop.Shutdown(1);
             errors.Attach();
             var window = (MainWindow)desktop.MainWindow;
-            _tray = new BroadcastTray(window, _host.Services.GetRequiredService<ViewModels.BroadcastViewModel>());
-            window.Tray = _tray;
+            _ = AddTrayAsync(window, _host.Services.GetRequiredService<ViewModels.MainViewModel>());
             // macOS: clicking the Dock icon of a window hidden to the menu bar brings it back.
             if (TryGetFeature(typeof(IActivatableLifetime)) is IActivatableLifetime activatable)
             {
@@ -52,6 +51,18 @@ public partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>The tray icon (and its Go Live item) appears once the terms are accepted (#68).</summary>
+    private async Task AddTrayAsync(MainWindow window, ViewModels.MainViewModel model)
+    {
+        await model.Consent.Accepted;
+        if (_host is null)
+        {
+            return;
+        }
+        _tray = new BroadcastTray(window, model.Broadcast);
+        window.Tray = _tray;
     }
 
     private void OnExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)

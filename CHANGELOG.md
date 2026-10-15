@@ -9,6 +9,9 @@ auto-generated list of merged pull requests.
 
 ## [Unreleased]
 
+### Added
+- First-start screen: a privacy summary, the Terms of Service and Privacy Policy to accept, and the third-party licenses. It shows again when the terms change; Settings › About shows the accepted version and can open it again.
+
 ## [0.2.0] - 2026-10-14
 
 First public release.

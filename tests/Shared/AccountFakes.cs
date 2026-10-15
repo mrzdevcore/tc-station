@@ -39,6 +39,8 @@ internal sealed class FakeDesktopApi : IDesktopApi
     public int TargetRequests => _issued;
     public int Refreshes => _refreshes;
     public TimeSpan AccessTokenLifetime { get; set; } = TimeSpan.FromMinutes(15);
+    /// <summary>What <c>/auth/me</c> says about the terms; null for a server older than them (tc-dashboard#94).</summary>
+    public TermsStatus? Terms { get; set; } = new(Tropicast.Station.Core.Settings.LegalTerms.Version, true);
 
     public Task<DeviceSignIn> StartSignInAsync(string deviceName, CancellationToken cancellationToken = default)
     {
@@ -102,6 +104,14 @@ internal sealed class FakeDesktopApi : IDesktopApi
         return Task.FromResult(new IssuedStationTarget(
             new StationTarget(station.StationId, station.PublicId, station.Name, station.PublicId, MaxBitrateKbps, outputs),
             $"station-password-{n}"));
+    }
+
+    public Task<TermsStatus> GetTermsAsync(string accessToken, CancellationToken cancellationToken = default)
+    {
+        ThrowIfOffline();
+        AccessTokensSeen.Add(accessToken);
+        return Terms is { } terms ? Task.FromResult(terms)
+            : throw new DesktopApiException(DesktopApiError.Invalid, "The Tropicast API sent an answer this version does not understand.");
     }
 
     private static StationOutput Output(AccountStation station, string extension, string contentType)

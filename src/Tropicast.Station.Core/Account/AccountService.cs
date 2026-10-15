@@ -144,6 +144,10 @@ public sealed class AccountService(IDesktopApi api, IAccountStore store, ISecret
         return issued;
     }
 
+    /// <summary>The current terms version and whether this account accepted it (<c>GET /api/v1/auth/me</c>).</summary>
+    public Task<TermsStatus> GetTermsAsync(CancellationToken cancellationToken = default)
+        => WithAccessTokenAsync(token => api.GetTermsAsync(token, cancellationToken), cancellationToken);
+
     /// <summary>Signs the device out on the server (best effort) and forgets every token and station password.</summary>
     public async Task SignOutAsync(CancellationToken cancellationToken = default)
     {
