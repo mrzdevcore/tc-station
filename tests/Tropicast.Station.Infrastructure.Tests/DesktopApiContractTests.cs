@@ -36,6 +36,8 @@ public sealed partial class DesktopApiContractTests
 
         var station = Assert.Single(account.Stations);
         Assert.Equal(stationId, station.StationId);
+        // The bundled terms version is the dashboard's (Legal.TermsVersion), accepted at sign-up.
+        Assert.Equal(new TermsStatus(Core.Settings.LegalTerms.Version, true), await account.GetTermsAsync(Token));
         var issued = await account.GetTargetAsync(stationId, renew: false, Token);
         var profile = AccountBroadcastTargetProvider.ToProfile(issued.Target);
         Assert.Equal(station.PublicId, profile.Username);
@@ -74,7 +76,7 @@ public sealed partial class DesktopApiContractTests
 
         public async Task SignUpAndLoginAsync()
         {
-            await SendAsync(HttpMethod.Post, "/api/v1/auth/register", new { email = _email, password = Password });
+            await SendAsync(HttpMethod.Post, "/api/v1/auth/register", new { email = _email, password = Password, acceptTerms = true });
             var search = await _mail.GetFromJsonAsync<JsonElement>($"/api/v1/search?query=to:{_email}", Token);
             var id = search.GetProperty("messages")[0].GetProperty("ID").GetString();
             var text = (await _mail.GetFromJsonAsync<JsonElement>($"/api/v1/message/{id}", Token)).GetProperty("Text").GetString()!;
@@ -82,7 +84,7 @@ public sealed partial class DesktopApiContractTests
             var query = System.Web.HttpUtility.ParseQueryString(link.Query);
             await SendAsync(HttpMethod.Post, "/api/v1/auth/confirm-email", new { userId = query["userId"], code = query["code"] });
             await RefreshAntiforgeryAsync();
-            await SendAsync(HttpMethod.Post, "/api/v1/auth/login", new { email = _email, password = Password });
+            await SendAsync(HttpMethod.Post, "/api/v1/auth/login", new { email = _email, password = Password, acceptTerms = true });
             await RefreshAntiforgeryAsync();
         }
 

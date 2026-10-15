@@ -29,7 +29,7 @@ public sealed class DiagnosticsTests
         secrets.Items[profile.Id] = password;
         try
         {
-            using var host = AppHost.Create(["--demo-audio"], services =>
+            using var host = TestHost.Create(["--demo-audio"], services =>
             {
                 services.AddSingleton(logs);
                 services.AddSingleton<IProfileStore>(new MemoryProfiles { Items = [profile] });
@@ -86,7 +86,7 @@ public sealed class DiagnosticsTests
         using var logs = new SafeLogProvider(directory);
         try
         {
-            using var host = AppHost.Create(["--demo-audio"], services => services.AddSingleton(logs));
+            using var host = TestHost.Create(["--demo-audio"], services => services.AddSingleton(logs));
             var window = host.Services.GetRequiredService<MainWindow>();
             window.Show();
             var audio = host.Services.GetRequiredService<AudioDevicesViewModel>();
@@ -142,7 +142,7 @@ public sealed class DiagnosticsTests
         using var logs = new SafeLogProvider(directory);
         try
         {
-            using var host = AppHost.Create(["--demo-audio"], services => services.AddSingleton(logs));
+            using var host = TestHost.Create(["--demo-audio"], services => services.AddSingleton(logs));
             var window = host.Services.GetRequiredService<MainWindow>();
             window.Show();
             var button = window.Find<Button>("ExportDiagnosticsButton")!;

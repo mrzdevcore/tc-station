@@ -36,11 +36,15 @@ internal static class AppHost
             builder.Services.AddMacAudioCapture();
         }
 
+        var apiBaseUrl = BaseUrl(builder.Configuration["Tropicast:ApiBaseUrl"], "Tropicast:ApiBaseUrl");
         builder.Services
             .AddStationCore()
             .AddStationAudio(demoAudio)
             .AddStationEncoding()
-            .AddStationInfrastructure(ApiBaseUrl(builder.Configuration["Tropicast:ApiBaseUrl"]));
+            .AddStationInfrastructure(apiBaseUrl);
+        // The web app serves /terms and /privacy; in production it shares the API's address.
+        builder.Services.AddSingleton(LegalLinks.For(BaseUrl(builder.Configuration["Tropicast:WebBaseUrl"], "Tropicast:WebBaseUrl")
+            ?? apiBaseUrl ?? Infrastructure.HttpDesktopApi.DefaultBaseUrl));
 
         builder.Services.AddSingleton<MainViewModel>();
         builder.Services.AddSingleton<AccountViewModel>();
@@ -50,6 +54,7 @@ internal static class AppHost
         builder.Services.AddSingleton<AudioLevelsViewModel>();
         builder.Services.AddSingleton<BroadcastViewModel>();
         builder.Services.AddSingleton<GeneralSettingsViewModel>();
+        builder.Services.AddSingleton<ConsentViewModel>();
         builder.Services.AddSingleton<ITraySupport, TraySupport>();
         builder.Services.AddSingleton<ITrayNotice, TrayNotice>();
         builder.Services.AddSingleton<IBroadcastConfirmation, BroadcastConfirmation>();
@@ -75,11 +80,12 @@ internal static class AppHost
     }
 
     /// <summary>
-    /// The Tropicast API address: production unless the <c>Tropicast:ApiBaseUrl</c> setting (e.g. the environment
-    /// variable <c>Tropicast__ApiBaseUrl=http://localhost:8080</c>) names another one.
+    /// A Tropicast address setting, null when unset (production then). <c>Tropicast:ApiBaseUrl</c> is the API (e.g. the
+    /// environment variable <c>Tropicast__ApiBaseUrl=http://localhost:8080</c>); <c>Tropicast:WebBaseUrl</c> the web app
+    /// with the Terms and Privacy pages, when it is not at the API's address (e.g. <c>http://localhost:5173</c>).
     /// </summary>
-    private static Uri? ApiBaseUrl(string? setting)
+    private static Uri? BaseUrl(string? setting, string name)
         => string.IsNullOrWhiteSpace(setting) ? null
             : Uri.TryCreate(setting, UriKind.Absolute, out var url) && Infrastructure.HttpDesktopApi.IsAllowed(url) ? url
-            : throw new InvalidOperationException("Tropicast:ApiBaseUrl must be an HTTPS address (or HTTP on this computer).");
+            : throw new InvalidOperationException($"{name} must be an HTTPS address (or HTTP on this computer).");
 }

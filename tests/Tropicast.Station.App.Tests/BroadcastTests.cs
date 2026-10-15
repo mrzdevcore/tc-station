@@ -183,7 +183,7 @@ public sealed class BroadcastTests
         using var host = CreateHost(profile, encoder, confirmation, services =>
             services.AddSingleton<Tropicast.Station.Core.Settings.IAppSettingsStore>(new MemoryAppSettings
             {
-                Settings = new(KeepInTray: true, TrayNoticeShown: true),
+                Settings = new(KeepInTray: true, TrayNoticeShown: true, Consent: TestHost.Accepted),
             }));
         var window = host.Services.GetRequiredService<MainWindow>();
         window.Show();
@@ -298,7 +298,7 @@ public sealed class BroadcastTests
     {
         var secrets = new MemorySecrets();
         secrets.Items[profile.Id] = "test-only";
-        return AppHost.Create([], services =>
+        return TestHost.Create([], services =>
         {
             services.AddSingleton<IProfileStore>(new MemoryProfiles { Items = [profile] });
             services.AddSingleton<ISecretStore>(secrets);

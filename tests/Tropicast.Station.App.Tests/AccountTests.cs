@@ -68,6 +68,8 @@ public sealed class AccountTests
         public Task<IssuedStationTarget> GetBroadcastTargetAsync(string accessToken, Guid tenantId, Guid stationId,
             CancellationToken cancellationToken = default)
             => Task.Run(() => inner.GetBroadcastTargetAsync(accessToken, tenantId, stationId, cancellationToken), cancellationToken);
+        public Task<TermsStatus> GetTermsAsync(string accessToken, CancellationToken cancellationToken = default)
+            => Task.Run(() => inner.GetTermsAsync(accessToken, cancellationToken), cancellationToken);
     }
 
     [AvaloniaFact]
@@ -75,7 +77,7 @@ public sealed class AccountTests
     {
         var secrets = new MemorySecrets();
         var browser = new Browser();
-        using var host = AppHost.Create([], services =>
+        using var host = TestHost.Create([], services =>
         {
             services.AddSingleton<IProfileStore, MemoryProfiles>();
             services.AddSingleton<ISecretStore>(secrets);
@@ -113,7 +115,7 @@ public sealed class AccountTests
         var secrets = new MemorySecrets();
         var browser = new Browser();
         var encoder = new RecordingEncoder();
-        using var host = AppHost.Create([], services =>
+        using var host = TestHost.Create([], services =>
         {
             services.AddSingleton<IProfileStore, MemoryProfiles>();
             services.AddSingleton<ISecretStore>(secrets);

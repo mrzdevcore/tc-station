@@ -39,6 +39,39 @@ public sealed class HttpDesktopApiTests
         => Assert.Equal(allowed, HttpDesktopApi.IsAllowed(new Uri(url)));
 
     [Fact]
+    public async Task Terms_come_from_auth_me_with_the_access_token()
+    {
+        var (api, handler) = Create(_ => Json(HttpStatusCode.OK, """
+            {"id":"6f1c2a52-6a8e-4a43-9a43-6c7f3d3f8b11","email":"a@example.test","memberships":[],
+             "termsVersion":"2026-10-14","termsAccepted":false}
+            """));
+        using var _ = api;
+
+        Assert.Equal(new TermsStatus("2026-10-14", false), await api.GetTermsAsync("at", Token));
+        var request = Assert.Single(handler.Requests).Request;
+        Assert.Equal("/api/v1/auth/me", request.RequestUri!.AbsolutePath);
+        Assert.Equal("Bearer at", request.Headers.Authorization!.ToString());
+    }
+
+    [Fact]
+    public async Task Terms_without_the_accepted_flag_do_not_count_as_refused()
+    {
+        var (api, _) = Create(_ => Json(HttpStatusCode.OK, """{"termsVersion":"2026-10-14"}"""));
+        using var _ = api;
+
+        Assert.Equal(new TermsStatus("2026-10-14", true), await api.GetTermsAsync("at", Token));
+    }
+
+    [Fact]
+    public async Task A_server_without_terms_is_an_answer_this_version_does_not_understand()
+    {
+        var (api, _) = Create(_ => Json(HttpStatusCode.OK, """{"id":"6f1c2a52-6a8e-4a43-9a43-6c7f3d3f8b11","email":"a@example.test","memberships":[]}"""));
+        using var _ = api;
+
+        Assert.Equal(DesktopApiError.Invalid, (await Assert.ThrowsAsync<DesktopApiException>(() => api.GetTermsAsync("at", Token))).Error);
+    }
+
+    [Fact]
     public async Task Device_sign_in_starts_and_maps_every_poll_answer()
     {
         var answers = new Queue<HttpResponseMessage>([

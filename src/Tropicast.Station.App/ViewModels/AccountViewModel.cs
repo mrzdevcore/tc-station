@@ -12,13 +12,15 @@ public sealed partial class AccountViewModel : ViewModelBase, IDisposable
 {
     private readonly AccountService _account;
     private readonly IExternalBrowser _browser;
+    private readonly ConsentViewModel _consent;
     private Uri? _signInPage;
     private bool _syncing;
 
-    public AccountViewModel(AccountService account, IExternalBrowser browser)
+    public AccountViewModel(AccountService account, IExternalBrowser browser, ConsentViewModel consent)
     {
         _account = account;
         _browser = browser;
+        _consent = consent;
         account.Changed += OnAccountChanged;
     }
 
@@ -31,6 +33,9 @@ public sealed partial class AccountViewModel : ViewModelBase, IDisposable
     [ObservableProperty] public partial bool IsBroadcastLocked { get; set; }
     [ObservableProperty] public partial string UserCode { get; set; } = "";
     [ObservableProperty] public partial string Status { get; set; } = "Sign in to broadcast to your Tropicast stations.";
+    /// <summary>Set while the account has not accepted the current terms on the web; empty otherwise.</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasTermsNotice))] public partial string TermsNotice { get; set; } = "";
+    public bool HasTermsNotice => TermsNotice.Length > 0;
 
     public bool IsSignedOut => !IsSignedIn && !IsSigningIn;
     public bool HasNoStations => IsSignedIn && Stations.Count == 0;
@@ -44,9 +49,10 @@ public sealed partial class AccountViewModel : ViewModelBase, IDisposable
         await RunAsync(async () =>
         {
             await _account.LoadAsync();
-            if (_account.IsSignedIn)
+            // Offline the station refresh already waited for the API: the terms check would only wait again.
+            if (_account.IsSignedIn && await RefreshQuietlyAsync())
             {
-                await RefreshQuietlyAsync();
+                await CheckTermsAsync();
             }
         });
     }
@@ -68,6 +74,7 @@ public sealed partial class AccountViewModel : ViewModelBase, IDisposable
                 OpenSignInPage();
             }).GetTask(), cancellationToken);
             Status = _account.Stations.Count == 0 ? "Signed in. This account has no station yet: create one on the web." : "Signed in.";
+            await CheckTermsAsync();
         }
         catch (OperationCanceledException)
         {
@@ -100,6 +107,10 @@ public sealed partial class AccountViewModel : ViewModelBase, IDisposable
             }
         }
     }
+
+    /// <summary>The Terms of Service page of the web app: signing in there asks for the current terms.</summary>
+    [RelayCommand]
+    private void OpenWebApp() => _consent.OpenTermsCommand.Execute(null);
 
     [RelayCommand(CanExecute = nameof(CanUseAccount))]
     private async Task RefreshStationsAsync()
@@ -139,15 +150,36 @@ public sealed partial class AccountViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private async Task RefreshQuietlyAsync()
+    /// <summary>Reloads the stations; false when the API cannot be reached (the last session's stations stay).</summary>
+    private async Task<bool> RefreshQuietlyAsync()
     {
         try
         {
             await _account.RefreshStationsAsync();
+            return true;
         }
         catch (DesktopApiException ex) when (ex.Error == DesktopApiError.Unavailable)
         {
             Status = "Offline: showing the stations from the last session.";
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Asks the account for the terms version (a newer one shows the consent screen again) and whether the user
+    /// accepted it on the web. Offline, or with a server older than the terms, the bundled version applies.
+    /// </summary>
+    private async Task CheckTermsAsync()
+    {
+        try
+        {
+            var terms = await _account.GetTermsAsync();
+            _consent.ApplyAccountVersion(terms.Version);
+            TermsNotice = terms.Accepted ? ""
+                : "Your account has not accepted the current Terms of Service yet. Sign in on the web to accept them.";
+        }
+        catch (Exception ex) when (ex is DesktopApiException or SecretStoreException)
+        {
         }
     }
 
@@ -186,6 +218,10 @@ public sealed partial class AccountViewModel : ViewModelBase, IDisposable
         try
         {
             IsSignedIn = _account.IsSignedIn;
+            if (!IsSignedIn)
+            {
+                TermsNotice = "";
+            }
             Stations.Clear();
             foreach (var station in _account.Stations)
             {

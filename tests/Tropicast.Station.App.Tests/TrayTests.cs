@@ -214,9 +214,9 @@ public sealed class TrayTests
         AppSettings settings, bool trayDetected = true)
     {
         var notice = new Notice();
-        var host = AppHost.Create(["--demo-audio"], services =>
+        var host = TestHost.Create(["--demo-audio"], services =>
         {
-            services.AddSingleton(new MemoryAppSettings { Settings = settings });
+            services.AddSingleton(new MemoryAppSettings { Settings = settings with { Consent = settings.Consent ?? TestHost.Accepted } });
             services.AddSingleton<IAppSettingsStore>(sp => sp.GetRequiredService<MemoryAppSettings>());
             services.AddSingleton<ITraySupport>(new Detector(trayDetected));
             services.AddSingleton<ITrayNotice>(notice);

@@ -50,7 +50,9 @@ Download the package for your system from the
 - **Linux:** `Tropicast-Station-<version>-x86_64.AppImage`. It needs `pactl`/`parec`
   and `secret-tool`: see [runtime prerequisites](docs/packaging.md#runtime-prerequisites-for-users).
 
-Check downloads against `SHA256SUMS.txt` in the release.
+Check downloads against `SHA256SUMS.txt` in the release. At the first start the app asks you to
+accept the Terms of Service and the Privacy Policy, and shows the third-party licenses:
+[details](docs/packaging.md#terms-privacy-and-licenses-at-first-start).
 
 ## Build and run
 

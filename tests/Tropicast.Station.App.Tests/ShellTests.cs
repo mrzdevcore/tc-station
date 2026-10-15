@@ -16,7 +16,7 @@ public sealed class ShellTests
     [AvaloniaFact]
     public void Go_live_stays_reachable_from_every_page()
     {
-        using var host = AppHost.Create(["--demo-audio"]);
+        using var host = TestHost.Create(["--demo-audio"]);
         var window = host.Services.GetRequiredService<MainWindow>();
         window.Show();
         var model = host.Services.GetRequiredService<MainViewModel>();
@@ -35,7 +35,7 @@ public sealed class ShellTests
     [AvaloniaFact]
     public void Search_keeps_matching_pages_and_rows_and_says_when_nothing_matches()
     {
-        using var host = AppHost.Create(["--demo-audio"]);
+        using var host = TestHost.Create(["--demo-audio"]);
         var window = host.Services.GetRequiredService<MainWindow>();
         window.Show();
         var model = host.Services.GetRequiredService<MainViewModel>();
@@ -62,7 +62,7 @@ public sealed class ShellTests
     [AvaloniaFact]
     public void Small_window_collapses_the_sidebar_to_icons()
     {
-        using var host = AppHost.Create(["--demo-audio"]);
+        using var host = TestHost.Create(["--demo-audio"]);
         var window = host.Services.GetRequiredService<MainWindow>();
         window.Width = 640;
         window.Height = 420;
@@ -78,7 +78,7 @@ public sealed class ShellTests
     [AvaloniaFact]
     public void Default_window_shows_the_full_sidebar()
     {
-        using var host = AppHost.Create(["--demo-audio"]);
+        using var host = TestHost.Create(["--demo-audio"]);
         var window = host.Services.GetRequiredService<MainWindow>();
         window.Show();
         var shell = window.Find<SplitView>("Shell")!;
@@ -92,7 +92,7 @@ public sealed class ShellTests
     [AvaloniaFact]
     public async Task Search_ignores_hidden_rows_and_follows_them_when_they_appear()
     {
-        using var host = AppHost.Create(["--demo-audio"], services =>
+        using var host = TestHost.Create(["--demo-audio"], services =>
         {
             services.AddSingleton<IProfileStore, MemoryProfiles>();
             services.AddSingleton<ISecretStore, MemorySecrets>();
@@ -118,7 +118,7 @@ public sealed class ShellTests
     [AvaloniaFact]
     public void Search_hides_whole_groups_but_keeps_meters_and_profile_actions()
     {
-        using var host = AppHost.Create(["--demo-audio"]);
+        using var host = TestHost.Create(["--demo-audio"]);
         var window = host.Services.GetRequiredService<MainWindow>();
         window.Show();
         var model = host.Services.GetRequiredService<MainViewModel>();
@@ -139,7 +139,7 @@ public sealed class ShellTests
     [AvaloniaFact]
     public void Account_page_shows_the_sign_in_code_for_a_manual_profile_user_too()
     {
-        using var host = AppHost.Create(["--demo-audio"]);
+        using var host = TestHost.Create(["--demo-audio"]);
         var window = host.Services.GetRequiredService<MainWindow>();
         window.Show();
         var model = host.Services.GetRequiredService<MainViewModel>();
@@ -159,7 +159,7 @@ public sealed class ShellTests
     [AvaloniaFact]
     public void Typing_a_search_in_a_small_window_keeps_the_sidebar_open()
     {
-        using var host = AppHost.Create(["--demo-audio"]);
+        using var host = TestHost.Create(["--demo-audio"]);
         var window = host.Services.GetRequiredService<MainWindow>();
         window.Width = 640;
         window.Height = 420;
