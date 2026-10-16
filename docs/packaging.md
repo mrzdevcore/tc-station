@@ -143,6 +143,42 @@ app (`-p:Version`). The `0.0.0` in `Directory.Build.props`, `Info.plist` and the
 a development placeholder; local and CI builds report it. MSIX versions are `major.minor.patch.0`;
 the pre-release suffix only appears in the release title.
 
+## Mirror to Object Storage
+
+`mirror-release.yml` copies the latest **published** release to the Object Storage bucket that
+tc-dashboard serves downloads from (tropicast/tc-dashboard#127), so users download from
+`app.tropicastradio.com` while the bucket stays private. It runs when a release is published, or by
+hand (**Actions › Mirror release › Run workflow**, optional `tag`). Pre-releases are skipped; a
+draft is refused. The work is in [`scripts/mirror-release.sh`](../scripts/mirror-release.sh), which
+also runs locally with the same variables.
+
+Only the latest version is kept, under `releases/tc-station/latest/`:
+
+| Key | Content |
+|---|---|
+| `Tropicast-Station-<v>-*.msix`, `.dmg`, `.AppImage`, `tropicast.cer`, `SHA256SUMS.txt` | The release assets, checked against `SHA256SUMS.txt` first |
+| `install-windows-msix.ps1` | From the release's tagged commit |
+| `README.md` | [`docs/install/README.md`](install/README.md) of the tagged commit (`main` when the tag has none): install and troubleshooting |
+| `manifest.json` | Written last; `version`, `tag`, `mirroredAt` and per file `name`, `platform`, `contentType`, `size`, `sha256` |
+
+`platform` is `win-x64`, `osx-arm64`, `osx-x64`, `linux-x64`, `certificate`, `checksums`,
+`script` or `readme`. An asset the script does not know stops the mirror before anything is
+switched. After `manifest.json` is written, objects of the previous version are deleted; the rest of
+the bucket (`stations/`, AutoDJ tracks) is never touched. A failed run (storage down, checksum
+mismatch, size check after upload) leaves the previous manifest in place; run it again.
+
+Settings (repository):
+
+| Name | Kind | Value |
+|---|---|---|
+| `STORAGE_S3_ENDPOINT` | variable | `https://fsn1.your-objectstorage.com` |
+| `STORAGE_S3_BUCKET` | variable | `tropicast-tracks` |
+| `STORAGE_S3_ACCESS_KEY`, `STORAGE_S3_SECRET_KEY` | secrets | An Object Storage key for this bucket, not tc-dashboard's |
+
+Check after a run: `manifest.json` names the new version, and
+`aws --endpoint-url $STORAGE_S3_ENDPOINT s3 ls s3://tropicast-tracks/releases/tc-station/latest/`
+lists only its files.
+
 ## Code-signing secrets
 
 Configure these repository (or environment) secrets. Missing secrets never fail the build; the
