@@ -50,6 +50,7 @@ Download the package for your system from the
 - **Linux:** `Tropicast-Station-<version>-x86_64.AppImage`. It needs `pactl`/`parec`
   and `secret-tool`: see [runtime prerequisites](docs/packaging.md#runtime-prerequisites-for-users).
 
+Step-by-step install and troubleshooting: [docs/install/README.md](docs/install/README.md).
 Check downloads against `SHA256SUMS.txt` in the release. At the first start the app asks you to
 accept the Terms of Service and the Privacy Policy, and shows the third-party licenses:
 [details](docs/packaging.md#terms-privacy-and-licenses-at-first-start).
@@ -96,7 +97,8 @@ Dependencies point inward: `App` → `Audio` / `Encoding` / `Infrastructure` →
 | [Audio capture and levels](docs/reference/audio.md)         | Sources per OS, preview, hardware qualification, meters and warnings    |
 | [FFmpeg / Icecast publishing](docs/reference/publishing.md) | Encoder sessions, source handshake, bundled FFmpeg and its licenses     |
 | [Logging and diagnostics](docs/reference/diagnostics.md)    | Log files, what is never logged, diagnostics export                     |
-| [Packaging and releases](docs/packaging.md)                 | Packages, MSIX install, release workflow, signing                       |
+| [Install guide](docs/install/README.md)                     | Install per platform and troubleshooting (published with the installers) |
+| [Packaging and releases](docs/packaging.md)                 | Packages, MSIX install, release workflow, storage mirror, signing      |
 | [Signing secrets](docs/signing-secrets.md)                  | Creating the Windows and macOS signing certificates                     |
 | [Contributing](docs/contributing.md)                        | Prerequisites, build, conventions, CI, opt-in and end-to-end tests      |
 | [Changelog](CHANGELOG.md)                                   | Changes per release                                                     |

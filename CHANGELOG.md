@@ -7,6 +7,12 @@ When releasing, rename `Unreleased` to the version (for example `## [0.2.0] - 20
 new empty `Unreleased` section. The release workflow publishes the matching section above the
 auto-generated list of merged pull requests.
 
+## [Unreleased]
+
+### Added
+- Install guide with troubleshooting per platform (`docs/install/README.md`), published with the installers.
+- Each published release is mirrored to Tropicast's own storage, so the app can be downloaded from `app.tropicastradio.com`.
+
 ## [0.2.1] - 2026-10-15
 
 ### Added
