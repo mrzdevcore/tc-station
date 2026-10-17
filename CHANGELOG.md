@@ -7,7 +7,7 @@ When releasing, rename `Unreleased` to the version (for example `## [0.2.0] - 20
 new empty `Unreleased` section. The release workflow publishes the matching section above the
 auto-generated list of merged pull requests.
 
-## [Unreleased]
+## [0.2.2] - 2026-10-17
 
 ### Changed
 - Lower delay on air (tropicast/tc-streaming#83): Opus leaves in 100 ms Ogg pages instead of about 1 s, so listeners hear the first audio after about 0.25 s instead of 2 s, and every second after it about 1 s sooner. The encoder holds at most 200 ms of audio, instead of up to 2 s. When the computer falls behind, the app drops the oldest audio and logs a warning; it stops the broadcast only if more than 1 s is dropped within 10 s.
