@@ -141,6 +141,11 @@ internal sealed partial class UnhandledErrors(BroadcastController broadcast, ILo
             var type = error.GetType().Name;
             LogUnhandled(logger, type);
         }
+        // Opt-in local debugging only: full exception text may contain credentials, so it never goes to the log file.
+        if (Environment.GetEnvironmentVariable("TROPICAST_DEBUG_ERRORS") == "1")
+        {
+            Console.Error.WriteLine(error.ToString());
+        }
     }
 
     [LoggerMessage(EventId = 1303, Level = LogLevel.Critical, Message = "Unhandled error ({ErrorType}); restart required.")]
