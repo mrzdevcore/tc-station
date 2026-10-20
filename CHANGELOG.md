@@ -7,6 +7,11 @@ When releasing, rename `Unreleased` to the version (for example `## [0.2.0] - 20
 new empty `Unreleased` section. The release workflow publishes the matching section above the
 auto-generated list of merged pull requests.
 
+## [Unreleased]
+
+### Fixed
+- macOS: the app no longer fails at launch while adding its menu-bar icon (#78).
+
 ## [0.2.2] - 2026-10-17
 
 ### Changed

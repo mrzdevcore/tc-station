@@ -47,6 +47,8 @@ internal sealed class BroadcastTray : IDisposable
         };
         _tray = new TrayIcon { Menu = Menu, IsVisible = true };
         _tray.Clicked += (_, _) => window.ToggleFromTray();
+        // Before SetIcons: attaching hands ToolTipText to the native tray, which throws on null (macOS).
+        Update();
         if (Application.Current is { } app)
         {
             TrayIcon.SetIcons(app, new TrayIcons { _tray });
@@ -54,7 +56,6 @@ internal sealed class BroadcastTray : IDisposable
         model.PropertyChanged += OnChanged;
         model.GoLiveCommand.CanExecuteChanged += OnCommandChanged;
         model.StopCommand.CanExecuteChanged += OnCommandChanged;
-        Update();
     }
 
     /// <summary>The right-click menu (the click menu on macOS).</summary>
