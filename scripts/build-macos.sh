@@ -21,6 +21,11 @@ output="$root/artifacts/$rid"
 bundle="$output/Tropicast Station.app"
 entitlements="$root/packaging/macos/entitlements.plist"
 
+if [[ ! -x "$root/artifacts/ffmpeg/$rid/ffmpeg" ]]; then
+  echo "Missing FFmpeg bundle: run scripts/build-ffmpeg.sh $rid first." >&2
+  exit 1
+fi
+
 rm -rf "$output"
 dotnet publish "$root/src/Tropicast.Station.App" -c Release -r "$rid" \
   --self-contained true -p:Version="$version" -o "$output/publish"
