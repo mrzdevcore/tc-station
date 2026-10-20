@@ -18,4 +18,6 @@ Export excludes profiles/passwords, endpoints, stream metadata, device names/sta
 
 Unhandled dispatcher errors + unobserved task failures stop capture/publishing where possible, show generic restart-required dialog, quit. Handlers detached on exit. Fatal CLR/process errors can't reliably show/await dialog: handler synchronously records safe error type, emits fixed restart message, exits code 1 before runtime can print raw managed exception details. Native fatal errors outside this managed handler's control. Startup errors also return exit code 1 with safe logs/stderr; no secret-bearing exception text shown. Handlers don't claim to recover corrupted state.
 
+**Local debugging only:** launching with `TROPICAST_DEBUG_ERRORS=1` also writes the full unhandled exception (message + stack trace) to stderr. Off by default; never written to log files or export bundles. Output may contain credentials—redact before sharing.
+
 Automated tests inject credential-bearing messages, scopes, command lines, URLs, exceptions, edited log records; verify file/console sinks, rolling bounds/private permissions, ZIP contents, real FFmpeg live-session password absence, actual dispatcher error dialog/cleanup.
